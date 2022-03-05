@@ -27,7 +27,7 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: |
-        coverage run --source='.' --omit='manage.py,appcenter/asgi.py,appcenter/wsgi.py' manage.py test
+        coverage run --source='.' --omit='manage.py,apphub/asgi.py,apphub/wsgi.py,client/client.py,client/request_client.py' manage.py test
         coverage xml
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
