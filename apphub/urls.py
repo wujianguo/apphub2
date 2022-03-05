@@ -16,8 +16,11 @@ Including another URLconf
 
 from django.urls import include, path
 from user.views import me
+from organization.views import OrganizationList
 
 urlpatterns = [
     path('api/user', me),
     path('api/user/', include('user.urls')),
+    path('api/orgs', OrganizationList.as_view()),
+    path('api/orgs/', include('organization.urls')),
 ]

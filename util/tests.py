@@ -58,9 +58,28 @@ class BaseTestCase(TestCase):
             dict22[key] = dict2.get(key, '')
         self.assertDictEqual(dict11, dict22)
 
-    def bill_gates(self):
+    def get_resp_list(self, r):
+        return r.json()
+
+    def google_org(self, visibility='Public'):
         return {
-            'username': 'BillGates',
-            'email': 'BillGates@example.com',
-            'password': 'BillGates@password'
+            "path": "google",
+            "name": "Google LLC",
+            "visibility": visibility,
+            "description": "Google LLC is an American multinational technology company that specializes in Internet-related services and products, which include online advertising technologies, a search engine, cloud computing, software, and hardware." 
+        }
+
+    def microsoft_org(self, visibility='Public'):
+        return {
+            "path": "microsoft",
+            "name": "Microsoft Corporation",
+            "visibility": visibility,
+            "description": "Microsoft Corporation is an American multinational technology corporation which produces computer software, consumer electronics, personal computers, and related services."
+        }
+
+    def generate_org(self, index, visibility='Public'):
+        return {
+            "path": "generated_org_" + format(index, '05'),
+            "name": "Generated Organization " + str(index),
+            "visibility": visibility,
         }

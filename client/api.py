@@ -1,5 +1,17 @@
+import tempfile, random
+from PIL import Image
 from client.client import BaseClient
 
+
+def generate_random_temp_image(size=(100, 100)):
+    image = Image.new('RGB', size=size)
+    pixels = image.load()
+    for x in range(image.size[0]):
+        for y in range(image.size[1]):
+            pixels[x, y] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    file = tempfile.NamedTemporaryFile(suffix='.jpg')
+    image.save(file)
+    return file
 
 class Api:
 
@@ -45,6 +57,72 @@ class Api:
         def me(self):
             return self.client.get('/user')
 
+        def create_org(self, org):
+            return self.client.post('/orgs', org)
+
+        def get_org_list(self, page=1, per_page=10, sort=None):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            if sort:
+                query['sort'] = sort
+            return self.client.get('/orgs', query)
+
+    class OrganizationApi():
+        def __init__(self, client, path):
+            self.client = client
+            self.base_path = '/orgs/' + path
+        
+        def get_org(self):
+            return self.client.get(self.base_path)
+
+        def update_org(self, org):
+            return self.client.put(self.base_path, org)
+
+        def remove_org(self):
+            return self.client.delete(self.base_path)
+
+        def change_or_set_icon(self, icon_file_path=None):
+            if icon_file_path is None:
+                file = generate_random_temp_image()
+                file_path = file.name
+            else:
+                file_path = icon_file_path
+
+            with open(file_path, 'rb') as fp:
+                data = {'icon_file': fp}
+                return self.client.upload_post(self.base_path + '/icon', data=data)
+
+        def get_icon(self):
+            return self.client.get(self.base_path + '/icon')
+
+        def remove_icon(self):
+            return self.client.delete(self.base_path + '/icon')
+
+        def add_member(self, username, role):
+            collaborator = {
+                'username': username,
+                'role': role
+            }
+            return self.client.post(self.base_path + '/members', collaborator)
+
+        def get_member(self, username):
+            return self.client.get(self.base_path + '/members/' + username)
+
+        def get_member_list(self):
+            return self.client.get(self.base_path + '/members')
+
+        def change_member_role(self, username, role):
+            data = {
+                'role': role
+            }
+            return self.client.put(self.base_path + '/members/' + username, data)
+
+        def remove_member(self, username):
+            return self.client.delete(self.base_path + '/members/' + username)
+
+
     def __init__(self, client, username='', auto_login=False):
         self.client = client
         if username and auto_login:
@@ -52,3 +130,6 @@ class Api:
 
     def get_user_api(self, username=''):
         return Api.UserApi(self.client, username)
+
+    def get_org_api(self, path):
+        return Api.OrganizationApi(self.client, path)
