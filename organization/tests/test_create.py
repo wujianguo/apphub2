@@ -86,7 +86,7 @@ class OrganizationCreateTest(BaseTestCase):
         self.assert_status_400(r)
 
     def test_invalid_name(self):
-        # 0 < len(name) <= 32
+        # 0 < len(name) <= 128
         api: Api = Api(UnitTestClient(), 'LarryPage', True)
         org = self.google_org()
 

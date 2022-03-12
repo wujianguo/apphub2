@@ -31,7 +31,7 @@ class Application(models.Model):
     description = models.CharField(max_length=1024, help_text='A short text describing the app')
     icon_file = models.ImageField(upload_to=application_directory_path)
     os = models.IntegerField(choices=OperatingSystem.choices, help_text='The OS the app will be running on')
-    universal_app = models.OneToOneField('application.UniversalApp', on_delete=models.CASCADE)
+    universal_app = models.ForeignKey('application.UniversalApp', on_delete=models.CASCADE)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -52,6 +52,24 @@ class UniversalApp(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
+
+    def enable_os_enum_list(self):
+        ret = []
+        choices = ChoiceField(choices=Application.OperatingSystem.choices)
+        obj = self
+        if obj.iOS:
+            ret.append(choices.to_representation(Application.OperatingSystem.iOS))
+        if obj.android:
+            ret.append(choices.to_representation(Application.OperatingSystem.Android))
+        if obj.macOS:
+            ret.append(choices.to_representation(Application.OperatingSystem.macOS))
+        if obj.windows:
+            ret.append(choices.to_representation(Application.OperatingSystem.Windows))
+        if obj.linux:
+            ret.append(choices.to_representation(Application.OperatingSystem.Linux))
+        if obj.tvOS:
+            ret.append(choices.to_representation(Application.OperatingSystem.tvOS))
+        return ret
 
 class UniversalAppUser(models.Model):
     class ApplicationUserRole(models.IntegerChoices):

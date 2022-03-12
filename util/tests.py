@@ -83,3 +83,32 @@ class BaseTestCase(TestCase):
             "name": "Generated Organization " + str(index),
             "visibility": visibility,
         }
+
+    def chrome_app(self, visibility='Public'):
+        return {
+            "path": "chrome",
+            "name": "Google Chrome",
+            "install_slug": "chrome",
+            "visibility": visibility,
+            "enable_os": ["iOS", "Android", "macOS"],
+            "description": "Download the fast, secure browser recommended by Google."
+        }
+
+    def todo_app(self, visibility='Public'):
+        return {
+            "path": "todo",
+            "name": "Microsoft To Do",
+            "install_slug": "todo",
+            "visibility": visibility,
+            "enable_os": ["iOS", "Android", "macOS"],
+            "description": "Create to do lists, reminders, and notes for any purpose."
+        }
+
+    def generate_app(sekf, index, visibility= 'Public'):
+        return {
+            "path": "generated_app_" + str(index),
+            "name": "Generated UniversalApp " + str(index),
+            "install_slug": "uapp"+ str(index),
+            "visibility": visibility,
+            "enable_os": ["iOS", "Android", "macOS"]
+        }

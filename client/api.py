@@ -60,19 +60,31 @@ class Api:
         def create_org(self, org):
             return self.client.post('/orgs', org)
 
-        def get_org_list(self, page=1, per_page=10, sort=None):
+        def get_org_list(self, page=1, per_page=10):
             query = {
                 'page': page,
                 'per_page': per_page
             }
-            if sort:
-                query['sort'] = sort
             return self.client.get('/orgs', query)
+
+        def get_app_api(self, path):
+            return Api.UniversalAppApi(self.client, path, self.username)
+
+        def create_app(self, app):
+            return self.client.post('/apps', app)
+
+        def get_app_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            return self.client.get('/apps', query)
 
     class OrganizationApi():
         def __init__(self, client, path):
             self.client = client
             self.base_path = '/orgs/' + path
+            self.path = path
         
         def get_org(self):
             return self.client.get(self.base_path)
@@ -121,6 +133,36 @@ class Api:
 
         def remove_member(self, username):
             return self.client.delete(self.base_path + '/members/' + username)
+
+        def create_app(self, app):
+            return self.client.post(self.base_path + '/apps', app)
+
+        def get_app_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            return self.client.get(self.base_path + '/apps', query)
+
+        def get_app_api(self, path):
+            return Api.UniversalAppApi(self.client, path, org=self.path)
+
+    class UniversalAppApi():
+        def __init__(self, client, path, owner='', org=''):
+            self.client = client
+            if owner:
+                self.base_path = '/users/' + owner + '/apps/' + path
+            if org:
+                self.base_path = '/orgs/' + org + '/apps/' + path
+        
+        def get_app(self):
+            return self.client.get(self.base_path)
+
+        def update_app(self, app):
+            return self.client.put(self.base_path, app)
+
+        # def remove_app(self):
+        #     return self.client.delete(self.base_path)
 
 
     def __init__(self, client, username='', auto_login=False):

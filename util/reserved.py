@@ -989,7 +989,7 @@ reserved_names = {
     "thread",
     "threads",
     "tmp",
-    "todo",
+    # "todo",
     "tool",
     "tools",
     "top",

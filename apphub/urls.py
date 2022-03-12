@@ -17,10 +17,15 @@ Including another URLconf
 from django.urls import include, path
 from user.views import me
 from organization.views import OrganizationList
+from application.views import UniversalAppList, UserUniversalAppDetail, OrganizationUniversalAppList, OrganizationUniversalAppDetail
 
 urlpatterns = [
     path('api/user', me),
     path('api/user/', include('user.urls')),
     path('api/orgs', OrganizationList.as_view()),
+    path('api/orgs/<org_path>/apps', OrganizationUniversalAppList.as_view()),
+    path('api/orgs/<org_path>/apps/<app_path>', OrganizationUniversalAppDetail.as_view()),
     path('api/orgs/', include('organization.urls')),
+    path('api/apps', UniversalAppList.as_view()),
+    path('api/users/<username>/apps/<path>', UserUniversalAppDetail.as_view(), name='app-detail'),
 ]

@@ -13,6 +13,7 @@ from application.models import UniversalApp
 from util.visibility import VisibilityType
 from util.choice import ChoiceField
 from util.reserved import reserved_names
+from util.pagination import get_pagination_params
 
 def viewer_query(user, path):
     if user.is_authenticated:
@@ -56,13 +57,7 @@ class OrganizationList(APIView):
         # example
         # - current user's orgs: username is my name and role is not null
         # - some user's orgs: username is user's name and role is not null
-        try:
-            page = int(request.GET.get('page', 1))
-            per_page = int(request.GET.get('per_page', 10))
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        if page <= 0 or per_page <=0 or per_page > 100:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        page, per_page = get_pagination_params(request)
 
         if request.user.is_authenticated:
             # todo
@@ -70,9 +65,9 @@ class OrganizationList(APIView):
             orgs = Organization.objects.filter(visibility__in=allow_visibility)
             user_orgs = OrganizationUser.objects.filter(user=request.user).prefetch_related('org')
             def not_in_user_orgs(org):
-                return len(list(filter(lambda x: x.org.path==org.path, user_orgs))) == 0
+                return len(list(filter(lambda x: x.org.id==org.id, user_orgs))) == 0
             orgs = filter(not_in_user_orgs, orgs)
-            data = OrganizationSerializer(orgs, many=True, context={'request': request}).data
+            data = OrganizationSerializer(orgs, many=True).data
             user_orgs_data = UserOrganizationSerializer(user_orgs, many=True).data
             data.extend(user_orgs_data)
             return Response(data[(page - 1) * per_page: page * per_page])
