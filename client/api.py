@@ -161,8 +161,21 @@ class Api:
         def update_app(self, app):
             return self.client.put(self.base_path, app)
 
-        # def remove_app(self):
-        #     return self.client.delete(self.base_path)
+        def upload_package(self, file_path):
+            with open(file_path, 'rb') as fp:
+                data = {'file': fp}
+                url = self.base_path + '/packages'
+                return self.client.upload_post(url, data=data)
+
+        def get_package_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            return self.client.get(self.base_path + '/packages', query)
+
+        def get_one_package(self, internal_build):
+            return self.client.get(self.base_path + '/packages/' + str(internal_build))
 
 
     def __init__(self, client, username='', auto_login=False):

@@ -3,3 +3,4 @@ djangorestframework
 requests
 coverage
 Pillow
+androguard
