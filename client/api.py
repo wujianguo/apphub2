@@ -177,6 +177,29 @@ class Api:
         def get_one_package(self, internal_build):
             return self.client.get(self.base_path + '/packages/' + str(internal_build))
 
+        def create_release(self, environment, release):
+            return self.client.post(self.base_path + '/releases/' + environment, release)
+
+        def get_release_list(self, environment):
+            return self.client.get(self.base_path + '/releases/' + environment)
+
+        def get_one_release(self, release_id):
+            return self.client.get(self.base_path + '/releases/' + str(release_id))
+
+        def create_vivo_store(self, auth_data):
+            return self.client.post(self.base_path + '/stores/vivo', auth_data)
+
+        def get_vivo_store(self):
+            return self.client.get(self.base_path + '/stores/vivo')
+
+        def submit_store(self, release_id, release_notes, store):
+            payload = {
+                'release_id': release_id,
+                'release_notes': release_notes,
+                'store': store
+            }
+            return self.client.post(self.base_path + '/stores/submit', payload)
+
 
     def __init__(self, client, username='', auto_login=False):
         self.client = client

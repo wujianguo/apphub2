@@ -18,7 +18,7 @@ from django.urls import include, path
 from user.views import me
 from organization.views import OrganizationList
 from application.views import UniversalAppList, UserUniversalAppDetail, OrganizationUniversalAppList, OrganizationUniversalAppDetail
-from distribute.views import UserAppPackageList, UserAppPackageDetail
+from distribute.views import UserAppPackageList, UserAppPackageDetail, UserAppReleaseList, UserAppReleaseDetail, UserStoreAppVivo
 
 urlpatterns = [
     path('api/user', me),
@@ -30,5 +30,8 @@ urlpatterns = [
     path('api/apps', UniversalAppList.as_view()),
     path('api/users/<username>/apps/<path>', UserUniversalAppDetail.as_view(), name='app-detail'),
     path('api/users/<username>/apps/<path>/packages', UserAppPackageList.as_view()),
-    path('api/users/<username>/apps/<path>/packages/<internal_build>', UserAppPackageDetail.as_view()),
+    path('api/users/<username>/apps/<path>/packages/<int:internal_build>', UserAppPackageDetail.as_view()),
+    path('api/users/<username>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),
+    path('api/users/<username>/apps/<path>/releases/<str:environment>', UserAppReleaseList.as_view()),
+    path('api/users/<username>/apps/<path>/stores/vivo', UserStoreAppVivo.as_view()),
 ]

@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.dispatch import receiver
 from application.models import UniversalApp, Application
 from util.choice import ChoiceField
+from distribute.stores.base import StoreType
 
 # alpha, beta, production, ...
 class DeploymentEnvironment(models.Model):
@@ -65,3 +66,50 @@ class Package(models.Model):
                 md5.update(chunk)
             self.fingerprint = md5.hexdigest()
         super(Package, self).save(*args, **kwargs)
+
+class Release(models.Model):
+    deployment = models.ForeignKey(DeploymentEnvironment, on_delete=models.CASCADE)
+    app = models.ForeignKey(Application, on_delete=models.CASCADE)
+    package = models.ForeignKey(Package, on_delete=models.CASCADE)
+    release_id = models.IntegerField()
+    release_notes = models.CharField(max_length=1024, help_text="The release's release notes.")
+    enabled = models.BooleanField(default=False, help_text="This value determines the whether a release currently is enabled or disabled.")
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+class Upgrade(models.Model):
+    release = models.ForeignKey(Release, on_delete=models.CASCADE)
+    release_notes = models.CharField(max_length=1024, help_text="The release's release notes.")
+    upgrade_id = models.IntegerField()
+    target_version = models.CharField(max_length=32)
+    enabled = models.BooleanField(default=False)
+    mandatory = models.BooleanField(default=False)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+class StoreApp(models.Model):
+    app = models.ForeignKey(Application, on_delete=models.CASCADE)
+    store = models.IntegerField(choices=StoreType.choices)
+    auth_data = models.JSONField(default=dict)
+    current_version = models.CharField(max_length=64)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+class ReleaseStore(models.Model):
+    class State(models.IntegerChoices):
+        Initial = 1
+        SubmitReview = 2
+        ReviewPassed = 3
+        ReviewRejected = 4
+        Released = 5
+
+    group_id = models.IntegerField()
+    release_store_id = models.IntegerField()
+    release = models.ForeignKey(Release, on_delete=models.CASCADE)
+    release_notes = models.CharField(max_length=1024, help_text="The release's release notes.")
+    store = models.ForeignKey(StoreApp, on_delete=models.CASCADE)
+    state = models.IntegerField(choices=State.choices)
+    reason = models.JSONField(default=dict)
+    operator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)

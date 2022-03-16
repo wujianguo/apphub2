@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from distribute.serializers import *
 from distribute.package_parser import parser
+from distribute.models import Release
 from application.models import Application, UniversalApp, UniversalAppUser
 from util.visibility import VisibilityType
 
@@ -19,7 +20,7 @@ def create_package(request, universal_app):
     ext = file.name.split('.')[-1]
     pkg = parser.parse(file.file, ext)
     if pkg is None:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        raise serializers.ValidationError('Can not parse the package.')
     if pkg.app_icon is not None:
         icon_file = ContentFile(pkg.app_icon)
         icon_file.name = 'icon.png'
@@ -29,7 +30,7 @@ def create_package(request, universal_app):
         app = universal_app.iOS
     elif pkg.os == Application.OperatingSystem.Android:
         app = universal_app.android
-    internal_build = Package.objects.filter(app=app).count() + 1
+    internal_build = Package.objects.filter(app__universal_app=universal_app).count() + 1
     instance = Package.objects.create(
         app=app,
         name=pkg.display_name,
@@ -113,3 +114,58 @@ class UserAppPackageDetail(APIView):
         package = self.get_object(user_app.app, internal_build)
         serializer = PackageSerializer(package, context={'request': request})
         return Response(serializer.data)
+
+
+class UserAppReleaseList(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, username, path, environment):
+        user_app = check_app_view_permission(request.user, path, username)
+        releases = Release.objects.filter(app__universal_app=user_app.app, deployment__name=environment)
+        serializer = ReleaseSerializer(releases, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, username, path, environment):
+        user_app = check_app_manager_permission(request.user, path, username)
+        serializer = ReleaseCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save(universal_app=user_app.app, environment=environment)
+        data = ReleaseSerializer(instance).data
+        return Response(data, status=status.HTTP_201_CREATED)
+
+class UserAppReleaseDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_object(self, universal_app, release_id):
+        try:
+            return Release.objects.get(app__universal_app=universal_app, release_id=release_id)
+        except Package.DoesNotExist:
+            raise Http404
+
+    def get(self, request, username, path, release_id):
+        user_app = check_app_view_permission(request.user, path, username)
+        release = self.get_object(user_app.app, release_id)
+        serializer = ReleaseSerializer(release)
+        return Response(serializer.data)
+
+class UserStoreAppVivo(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, username, path):
+        user_app = check_app_manager_permission(request.user, path, username)
+        try:
+            store_app = StoreApp.objects.get(app__universal_app=user_app.app)
+        except StoreApp.DoesNotExist:
+            raise Http404
+        serializer = StoreAppSerializer(store_app)
+        return Response(serializer.data)
+
+    def post(self, request, username, path):
+        user_app = check_app_manager_permission(request.user, path, username)
+        serializer = StoreAppVivoAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save(universal_app=user_app.app)
+        data = StoreAppSerializer(instance).data
+        return Response(data, status=status.HTTP_201_CREATED)
