@@ -57,6 +57,38 @@ class Api:
         def me(self):
             return self.client.get('/user')
 
+        def update(self, user):
+            return self.client.put('/user', user)
+
+        def change_password(self, password, new_password):
+            payload = {
+                'password': password,
+                'new_password': new_password
+            }
+            return self.client.post('/user/password/change', payload)
+
+        def request_reset_password(self, email):
+            payload = {
+                'email': email
+            }
+            return self.client.post('/user/password/request_reset', payload)
+
+        def reset_password(self, code, password):
+            payload = {
+                'code': code,
+                'password': password
+            }
+            return self.client.post('/user/password/reset', payload)
+
+        def request_verify_email(self):
+            return self.client.post('/user/email/request_verify')
+
+        def verify_email(self, code):
+            payload = {
+                'code': code
+            }
+            return self.client.post('/user/email/verify', payload)
+
         def create_org(self, org):
             return self.client.post('/orgs', org)
 

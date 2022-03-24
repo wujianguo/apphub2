@@ -1,7 +1,7 @@
 import uuid, hashlib
 from django.db import models
 from django.db.models.signals import post_save
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.dispatch import receiver
 from application.models import UniversalApp, Application
 from util.choice import ChoiceField
@@ -12,6 +12,8 @@ class DeploymentEnvironment(models.Model):
     app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
     name = models.SlugField(max_length=32)
     key = models.UUIDField(default=uuid.uuid4)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
 @receiver(post_save, sender=UniversalApp)
 def notify_app_save(sender, instance, created, **kwargs):
@@ -110,6 +112,6 @@ class ReleaseStore(models.Model):
     store = models.ForeignKey(StoreApp, on_delete=models.CASCADE)
     state = models.IntegerField(choices=State.choices)
     reason = models.JSONField(default=dict)
-    operator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

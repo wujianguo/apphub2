@@ -2,7 +2,7 @@ from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
 from django.db.models import Q
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -14,6 +14,9 @@ from util.visibility import VisibilityType
 from util.choice import ChoiceField
 from util.reserved import reserved_names
 from util.pagination import get_pagination_params
+
+UserModel = get_user_model()
+
 
 def viewer_query(user, path):
     if user.is_authenticated:
@@ -198,8 +201,8 @@ class OrganizationUserList(APIView):
             return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
         except OrganizationUser.DoesNotExist:
             try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
+                user = UserModel.objects.get(username=username)
+            except UserModel.DoesNotExist:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             instance = OrganizationUser.objects.create(org=user_org.org, role=role, user=user)
             serializer = OrganizationUserSerializer(instance)

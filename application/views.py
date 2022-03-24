@@ -2,7 +2,6 @@ from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
 from django.db.models import Q
-# from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from rest_framework import permissions, status
 from rest_framework.response import Response

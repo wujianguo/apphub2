@@ -15,13 +15,13 @@ Including another URLconf
 """
 
 from django.urls import include, path
-from user.views import me
+from user.views import MeUser
 from organization.views import OrganizationList
 from application.views import UniversalAppList, UserUniversalAppDetail, OrganizationUniversalAppList, OrganizationUniversalAppDetail
 from distribute.views import UserAppPackageList, UserAppPackageDetail, UserAppReleaseList, UserAppReleaseDetail, UserStoreAppVivo
 
 urlpatterns = [
-    path('api/user', me),
+    path('api/user', MeUser.as_view()),
     path('api/user/', include('user.urls')),
     path('api/orgs', OrganizationList.as_view()),
     path('api/orgs/<org_path>/apps', OrganizationUniversalAppList.as_view()),

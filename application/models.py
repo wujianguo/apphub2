@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from util.choice import CustomChoicesMeta, ChoiceField
 from util.visibility import VisibilityType
 
@@ -49,7 +49,7 @@ class UniversalApp(models.Model):
     icon_file = models.ImageField(upload_to=universal_app_directory_path)
     visibility = models.IntegerField(choices=VisibilityType.choices, null=True)
     org = models.ForeignKey('organization.Organization', on_delete=models.CASCADE, null=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -77,7 +77,7 @@ class UniversalAppUser(models.Model):
         Developer = 2
         Viewer = 3
     app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     role = models.IntegerField(ApplicationUserRole.choices)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

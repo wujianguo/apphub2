@@ -1,10 +1,18 @@
-from django.contrib.auth.models import User
+import datetime
+from django.utils import timezone
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from rest_framework.views import APIView
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from user.models import EmailCode
 from user.serializers import *
 from util.reserved import reserved_names
+
+UserModel = get_user_model()
 
 
 @api_view(['POST'])
@@ -17,10 +25,14 @@ def register(request):
     if username in reserved_names:
         return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
     password = serializer.validated_data.get('password')
-    email = serializer.validated_data.get('email')
+    email = serializer.validated_data.get('email', '')
     first_name = serializer.validated_data.get('first_name', '')
     last_name = serializer.validated_data.get('last_name', '')
-    user = User.objects.create_user(username=username, email=email)
+    if email and UserModel.objects.filter(email=email, email_verified=True).exists():
+        return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+    user = UserModel.objects.create_user(username=username)
+    if email:
+        user.email = email
     if first_name:
         user.first_name = first_name
     if last_name:
@@ -32,7 +44,6 @@ def register(request):
     response_data = response_serializer.data
     response_data['token'] = token.key
     return Response(response_data, status=status.HTTP_201_CREATED)
-
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -53,8 +64,111 @@ def logout_user(request):
     request.user.auth_token.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
-def me(request):
-    serializer = UserSerializer(request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+def request_verify_email(request):
+    if not request.user.email:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    email_code = EmailCode.objects.create(email=request.user.email, type=EmailCode.EmailCodeType.VerifyEmail)
+    message = str(email_code.code)
+    send_mail('verify your email', message, None, [request.user.email])
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def verify_email(request):
+    serializer = VerifyEmailSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        email_code = EmailCode.objects.get(
+            email=request.user.email,
+            code=serializer.validated_data['code'],
+            type=EmailCode.EmailCodeType.VerifyEmail,
+            valid=True)
+    except EmailCode.DoesNotExist:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    expire_time = email_code.create_time + datetime.timedelta(seconds=settings.CODE_EXPIRE_SECONDS)
+    if timezone.now() > expire_time:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    request.user.email_verified = True
+    request.user.save()
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def request_reset_password(request):
+    serializer = RequestResetPasswordSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    email = serializer.validated_data['email']
+    try:
+        UserModel.objects.get(email=email, email_verified=True)
+    except UserModel.DoesNotExist:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    email_code = EmailCode.objects.create(email=email, type=EmailCode.EmailCodeType.ResetPassword)
+    message = str(email_code.code)
+    send_mail('reset password', message, None, [email])
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def reset_password(request):
+    serializer = ResetPasswordSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        email_code = EmailCode.objects.get(
+            code=serializer.validated_data['code'], 
+            type=EmailCode.EmailCodeType.ResetPassword,
+            valid=True)
+    except EmailCode.DoesNotExist:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    expire_time = email_code.create_time + datetime.timedelta(seconds=settings.CODE_EXPIRE_SECONDS)
+    if timezone.now() > expire_time:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    email = email_code.email
+    try:
+        user = UserModel.objects.get(email=email, email_verified=True)
+    except UserModel.DoesNotExist:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    user.set_password(serializer.validated_data['password'])
+    user.save()
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def change_password(request):
+    serializer = ChangePasswordSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    user = authenticate(username=request.user.username, password=serializer.validated_data['password'])
+    if not user:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    request.user.set_password(serializer.validated_data['new_password'])
+    request.user.save()
+    return Response(status=status.HTTP_200_OK)
+
+
+class MeUser(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.validated_data.get('email'):
+            instance = serializer.save(email_verified=False)
+        else:
+            instance = serializer.save()
+        response_serializer = UserSerializer(instance)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)

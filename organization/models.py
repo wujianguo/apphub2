@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from util.visibility import VisibilityType
 
 def organization_directory_path(instance, filename):
@@ -21,7 +21,7 @@ class OrganizationUser(models.Model):
         Collaborator = 2
         Member = 3
     org = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     role = models.IntegerField(OrganizationUserRole.choices)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

@@ -150,3 +150,9 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# User
+AUTH_USER_MODEL = "user.User"
+AUTHENTICATION_BACKENDS = ["user.backends.EmailUsersModelBackend"]
+
+CODE_EXPIRE_SECONDS = 2 * 60 * 60
