@@ -1,17 +1,6 @@
-import tempfile, random
-from PIL import Image
 from client.client import BaseClient
+from util.image import generate_random_image
 
-
-def generate_random_temp_image(size=(100, 100)):
-    image = Image.new('RGB', size=size)
-    pixels = image.load()
-    for x in range(image.size[0]):
-        for y in range(image.size[1]):
-            pixels[x, y] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    file = tempfile.NamedTemporaryFile(suffix='.jpg')
-    image.save(file)
-    return file
 
 class Api:
 
@@ -59,6 +48,17 @@ class Api:
 
         def update(self, user):
             return self.client.put('/user', user)
+
+        def update_avatar(self, avatar_file_path=None):
+            if avatar_file_path is None:
+                file = generate_random_image()
+                file_path = file.name
+            else:
+                file_path = avatar_file_path
+
+            with open(file_path, 'rb') as fp:
+                data = {'avatar': fp}
+                return self.client.upload_post('/user/avatar', data=data)
 
         def change_password(self, password, new_password):
             payload = {
@@ -129,7 +129,7 @@ class Api:
 
         def change_or_set_icon(self, icon_file_path=None):
             if icon_file_path is None:
-                file = generate_random_temp_image()
+                file = generate_random_image()
                 file_path = file.name
             else:
                 file_path = icon_file_path

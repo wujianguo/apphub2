@@ -56,3 +56,8 @@ class UserUpdateTest(BaseTestCase):
         r = api.get_user_api().me()
         self.assertEqual(r.json()['email'], new_email)
         self.assertEqual(r.json()['email_verified'], False)
+
+    def test_update_avatar(self):
+        api = self.register()
+        r = api.get_user_api().update_avatar()
+        self.assert_status_200(r)

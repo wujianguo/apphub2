@@ -1,13 +1,19 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from util.url import build_absolute_uri
 
 UserModel = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
+    def get_avatar(self, obj):
+        return build_absolute_uri(obj.avatar.url)
+
     class Meta:
         model = UserModel
-        fields = ['username', 'email', 'first_name', 'last_name', 'email_verified']
+        fields = ['username', 'email', 'first_name', 'last_name', 'avatar', 'email_verified']
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -20,6 +26,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ['username', 'email', 'first_name', 'last_name']
+
+class UserAvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ['avatar']
 
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()

@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.core.files import File
 from rest_framework.views import APIView
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
@@ -11,6 +12,8 @@ from rest_framework.response import Response
 from user.models import EmailCode
 from user.serializers import *
 from util.reserved import reserved_names
+from util.image import generate_icon_image
+from util.url import build_absolute_uri
 
 UserModel = get_user_model()
 
@@ -39,6 +42,8 @@ def register(request):
         user.last_name = last_name
     user.set_password(password)
     user.save()
+    file = generate_icon_image(first_name if first_name else username)
+    user.avatar.save('avatar.png', File(file.file))
     token, _ = Token.objects.get_or_create(user=user)
     response_serializer = UserSerializer(user)
     response_data = response_serializer.data
@@ -172,3 +177,20 @@ class MeUser(APIView):
             instance = serializer.save()
         response_serializer = UserSerializer(instance)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class UserAvatar(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = UserAvatarSerializer(request.user, data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save()
+        data = {
+            'avatar': build_absolute_uri(instance.avatar.url)
+        }
+        # todo response no content
+        response = Response(data)
+        response['Location'] = build_absolute_uri(instance.avatar.url)
+        return response
