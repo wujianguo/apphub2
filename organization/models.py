@@ -1,9 +1,11 @@
 from django.db import models
 from django.conf import settings
 from util.visibility import VisibilityType
+from util.url import get_file_extension
+
 
 def organization_directory_path(instance, filename):
-    name = 'icon.' + filename.split('.')[-1]
+    name = 'icon.' + get_file_extension(filename)
     return 'orgs/{0}/icons/{1}'.format(instance.id, name)
 
 class Organization(models.Model):

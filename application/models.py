@@ -2,9 +2,11 @@ from django.db import models
 from django.conf import settings
 from util.choice import CustomChoicesMeta, ChoiceField
 from util.visibility import VisibilityType
+from util.url import get_file_extension
+
 
 def application_directory_path(instance, filename):
-    name = 'icon.' + filename.split('.')[-1]
+    name = 'icon.' + get_file_extension(filename)
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.os)
     if instance.universal_app.org is not None:
         return 'orgs/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.org.id, instance.universal_app.id, os, name)
@@ -12,7 +14,7 @@ def application_directory_path(instance, filename):
         return 'users/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.owner.id, instance.universal_app.id, os, name)
 
 def universal_app_directory_path(instance, filename):
-    name = 'icon.' + filename.split('.')[-1]
+    name = 'icon.' + get_file_extension(filename)
     if instance.org is not None:
         return 'orgs/{0}/apps/{1}/icons/{2}'.format(instance.org.id, instance.id, name)
     else:

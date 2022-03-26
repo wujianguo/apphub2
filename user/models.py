@@ -1,10 +1,11 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from util.url import get_file_extension
 
 
 def avatar_directory_path(instance, filename):
-    name = '{0}.{1}'.format(instance.username, filename.split('.')[-1])
+    name = '{0}.{1}'.format(instance.username, get_file_extension(filename))
     return 'users/{0}/avatar/{1}'.format(instance.id, name)
 
 class User(AbstractUser):

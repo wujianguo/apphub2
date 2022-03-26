@@ -6,6 +6,8 @@ from django.dispatch import receiver
 from application.models import UniversalApp, Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
+from util.url import get_file_extension
+
 
 # alpha, beta, production, ...
 class DeploymentEnvironment(models.Model):
@@ -27,7 +29,7 @@ def notify_app_save(sender, instance, created, **kwargs):
 def distribute_package_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
-    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + filename.split('.')[-1]
+    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + get_file_extension(filename, 'zip')
     if universal_app.org is not None:
       return 'orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
@@ -36,7 +38,7 @@ def distribute_package_path(instance, filename):
 def distribute_icon_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
-    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + filename.split('.')[-1]
+    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + get_file_extension(filename)
     if instance.app.universal_app.org is not None:
       return 'orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
