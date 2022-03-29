@@ -97,6 +97,20 @@ class Api:
                 'page': page,
                 'per_page': per_page
             }
+            return self.client.get('/' + self.username + '/orgs', query)
+
+        def get_app_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            return self.client.get('/' + self.username + '/apps', query)
+
+        def get_visible_org_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
             return self.client.get('/orgs', query)
 
         def get_app_api(self, path):
@@ -105,7 +119,7 @@ class Api:
         def create_app(self, app):
             return self.client.post('/apps', app)
 
-        def get_app_list(self, page=1, per_page=10):
+        def get_visible_app_list(self, page=1, per_page=10):
             query = {
                 'page': page,
                 'per_page': per_page

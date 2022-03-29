@@ -16,11 +16,11 @@ class OrganizationPermissionTest(BaseTestCase):
         api.get_user_api().create_org(org)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        r = bill.get_user_api().get_org_list()
+        r = bill.get_user_api().get_visible_org_list()
         self.assert_list_length(r, 2)
 
         anonymous: Api = Api(UnitTestClient())
-        r = anonymous.get_user_api().get_org_list()
+        r = anonymous.get_user_api().get_visible_org_list()
         self.assert_list_length(r, 1)
 
     def test_member_can_view_private_org(self):

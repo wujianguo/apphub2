@@ -44,7 +44,7 @@ class OrganizationMemberTest(BaseTestCase):
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
         self.assertEqual(r.json()['role'], 'Collaborator')
-        r = bill.get_user_api().get_org_list()
+        r = bill.get_user_api().get_visible_org_list()
         self.assert_list_length(r, 1)
 
     def test_modify_member_role(self):

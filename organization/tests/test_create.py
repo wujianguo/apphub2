@@ -23,7 +23,7 @@ class OrganizationCreateTest(BaseTestCase):
         r2 = api.get_org_api(path).get_org()
         self.assertDictEqual(r.json(), r2.json())
 
-        r3 = api.get_user_api().get_org_list()
+        r3 = api.get_user_api().get_visible_org_list()
         self.assertDictEqual(self.get_resp_list(r3)[0], r.json())
 
     def test_invalid_path(self):
