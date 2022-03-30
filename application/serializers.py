@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.core.files import File
 from application.models import Application, UniversalApp, UniversalAppUser
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
+from util.image import generate_icon_image
 
 class UniversalAppSerializer(serializers.ModelSerializer):
     path = serializers.SlugField(max_length=32, help_text='The path of the universal application.')
@@ -41,18 +43,10 @@ class UniversalAppCreateSerializer(serializers.Serializer):
     class Meta:
         fields = ['path', 'name', 'description', 'visibility', 'enable_os']
 
-    def create(self, validated_data):
-        instance = UniversalApp.objects.create(
-            path=validated_data['path'],
-            name=validated_data['name'],
-            install_slug=validated_data['install_slug'],
-            description=validated_data.get('description', ''),
-            visibility=validated_data['visibility'],
-            owner=validated_data.get('owner', None),
-            org=validated_data.get('org', None)
-        )
-
-        enable_os = validated_data['enable_os']
+    def set_enable_os(self, instance, validated_data):
+        enable_os = validated_data.get('enable_os', None)
+        if not enable_os:
+            return
         iOS = None
         android = None
         macOS = None
@@ -79,7 +73,49 @@ class UniversalAppCreateSerializer(serializers.Serializer):
         instance.windows = windows
         instance.linux = linux
         instance.tvOS = tvOS
+
+    def update(self, instance, validated_data):
+        path = validated_data.get('path', None)
+        name = validated_data.get('name', None)
+        install_slug = validated_data.get('install_slug', None)
+        description = validated_data.get('description', None)
+        visibility = validated_data.get('visibility', None)
+        owner = validated_data.get('owner', None)
+        org = validated_data.get('org', None)
+        if path:
+            instance.path = path
+        if name:
+            instance.name = name
+        if install_slug:
+            instance.install_slug = install_slug
+        if description:
+            instance.description = description
+        if visibility:
+            instance.visibility = visibility
+        if owner:
+            instance.owner = owner
+        if org:
+            instance.org = org
+
+        self.set_enable_os(instance, validated_data)
         instance.save()
+        return instance
+
+    def create(self, validated_data):
+        instance = UniversalApp.objects.create(
+            path=validated_data['path'],
+            name=validated_data['name'],
+            install_slug=validated_data['install_slug'],
+            description=validated_data.get('description', ''),
+            visibility=validated_data['visibility'],
+            owner=validated_data.get('owner', None),
+            org=validated_data.get('org', None)
+        )
+
+        self.set_enable_os(instance, validated_data)
+        instance.save()
+        file = generate_icon_image(validated_data['name'])
+        instance.icon_file.save('icon.png', File(file.file))
         return instance
 
 class UniversalAppIconSerializer(serializers.ModelSerializer):

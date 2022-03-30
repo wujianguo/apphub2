@@ -5,9 +5,11 @@ class BaseTestCase(TestCase):
 
     def get_message(self, resp):
         try:
-            return resp.json()
+            data = resp.request
+            data.update({'response': resp.json()})
+            return data
         except:
-            return resp.status_code
+            return resp.request
 
     def assert_status(self, resp, status_code):
         self.assertEqual(resp.status_code, status_code, self.get_message(resp))

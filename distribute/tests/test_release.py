@@ -6,6 +6,7 @@ from util.tests import BaseTestCase
 def skip_if_base(func):
     def wrap(self, *args, **kwargs):
         if not self.kind():
+            self.skipTest('skip base.')
             return
         return func(self, *args, **kwargs)
     return wrap

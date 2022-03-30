@@ -49,7 +49,7 @@ class UniversalApp(models.Model):
     description = models.CharField(max_length=1024, help_text='A short text describing the app')
     install_slug = models.SlugField(max_length=32, unique=True)
     icon_file = models.ImageField(upload_to=universal_app_directory_path)
-    visibility = models.IntegerField(choices=VisibilityType.choices, null=True)
+    visibility = models.IntegerField(choices=VisibilityType.choices)
     org = models.ForeignKey('organization.Organization', on_delete=models.CASCADE, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
@@ -59,18 +59,36 @@ class UniversalApp(models.Model):
         ret = []
         choices = ChoiceField(choices=Application.OperatingSystem.choices)
         obj = self
-        if obj.iOS:
-            ret.append(choices.to_representation(Application.OperatingSystem.iOS))
-        if obj.android:
-            ret.append(choices.to_representation(Application.OperatingSystem.Android))
-        if obj.macOS:
-            ret.append(choices.to_representation(Application.OperatingSystem.macOS))
-        if obj.windows:
-            ret.append(choices.to_representation(Application.OperatingSystem.Windows))
-        if obj.linux:
-            ret.append(choices.to_representation(Application.OperatingSystem.Linux))
-        if obj.tvOS:
-            ret.append(choices.to_representation(Application.OperatingSystem.tvOS))
+        try:
+            if obj.iOS:
+                ret.append(choices.to_representation(Application.OperatingSystem.iOS))
+        except:
+            pass
+        try:
+            if obj.android:
+                ret.append(choices.to_representation(Application.OperatingSystem.Android))
+        except:
+            pass
+        try:
+            if obj.macOS:
+                ret.append(choices.to_representation(Application.OperatingSystem.macOS))
+        except:
+            pass
+        try:
+            if obj.windows:
+                ret.append(choices.to_representation(Application.OperatingSystem.Windows))
+        except:
+            pass
+        try:
+            if obj.linux:
+                ret.append(choices.to_representation(Application.OperatingSystem.Linux))
+        except:
+            pass
+        try:
+            if obj.tvOS:
+                ret.append(choices.to_representation(Application.OperatingSystem.tvOS))
+        except:
+            pass
         return ret
 
 class UniversalAppUser(models.Model):

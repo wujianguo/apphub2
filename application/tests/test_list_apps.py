@@ -5,6 +5,7 @@ from util.tests import BaseTestCase
 def skip_if_base(func):
     def wrap(self, *args, **kwargs):
         if not self.kind():
+            self.skipTest('skip base.')
             return
         return func(self, *args, **kwargs)
     return wrap
@@ -21,7 +22,7 @@ class BaseUniversalAppListTest(BaseTestCase):
         pass
 
     @skip_if_base
-    def xtest_empty_orgs(self):
+    def test_empty_orgs(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
 
@@ -48,3 +49,6 @@ class OrganizationUniversalAppListTest(BaseUniversalAppListTest):
         org['path'] = namespace + '_org'
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
+
+class UserVisibleAppListTest(BaseTestCase):
+    pass

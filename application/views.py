@@ -13,6 +13,7 @@ from util.visibility import VisibilityType
 from util.choice import ChoiceField
 from util.reserved import reserved_names
 from util.pagination import get_pagination_params
+from util.url import build_absolute_uri
 
 def viewer_query(user, path, ownername):
     if user.is_authenticated:
@@ -153,6 +154,54 @@ class UserUniversalAppDetail(APIView):
         except UniversalApp.DoesNotExist:
             raise Http404
 
+    def put(self, request, username, path):
+        user_app = check_app_manager_permission(request.user, path, username)
+        serializer = UniversalAppCreateSerializer(user_app.app, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        if serializer.validated_data.get('path', None) and path != serializer.validated_data['path']:
+            if serializer.validated_data['path'] in reserved_names:
+                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+            if UniversalApp.objects.filter(path=serializer.validated_data['path']).exists():
+                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+
+        instance = serializer.save()
+        return Response(UniversalAppSerializer(instance).data)
+
+    def delete(self, request, username, path):
+        user_app = check_app_manager_permission(request.user, path, username)
+        # todo
+        user_app.app.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class UserUniversalAppIcon(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, username, path):
+        user_app = check_app_view_permission(request.user, path, username)
+        if not user_app.app.icon_file:
+            raise Http404
+        response = Response()
+        response['X-Accel-Redirect'] = user_app.app.icon_file.url
+        return response
+
+    def post(self, request, username, path):
+        user_app = check_app_manager_permission(request.user, path, username)
+        serializer = UniversalAppIconSerializer(user_app.app, data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        location = reverse('user-app-icon', args=(username, path))
+        data = {
+            'icon_file': build_absolute_uri(location)
+        }
+        # todo response no content
+        response = Response(data)
+        response['Location'] = build_absolute_uri(location)
+        return response
+
+# org
 def org_viewer_query(user, path):
     if user.is_authenticated:
         allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
@@ -188,6 +237,30 @@ def check_org_admin_permission(path, user):
 
 class OrganizationUniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, org_path):
+        page, per_page = get_pagination_params(request)
+        apps = []
+        if request.user.is_authenticated:
+            try:
+                user_org = OrganizationUser.objects.get(org__path=org_path, user=request.user)
+                apps = UniversalApp.objects.filter(org=user_org.org).order_by('path')[(page - 1) * per_page: page * per_page]
+            except OrganizationUser.DoesNotExist:
+                try:
+                    allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
+                    org = Organization.objects.get(org__path=org_path, visibility__in=allow_visibility)
+                    apps = UniversalApp.objects.filter(org=org, visibility__in=allow_visibility).order_by('path')[(page - 1) * per_page: page * per_page]
+                except Organization.DoesNotExist:
+                    pass
+        else:
+            try:
+                org = Organization.objects.get(org__path=org_path, visibility=VisibilityType.Public)
+                apps = UniversalApp.objects.filter(org=org, visibility=VisibilityType.Public).order_by('path')[(page - 1) * per_page: page * per_page]
+            except Organization.DoesNotExist:
+                pass
+
+        serializer = UniversalAppSerializer(apps, many=True)
+        return Response(serializer.data)
 
     def post(self, request, org_path):
         user_org = check_org_admin_permission(org_path, request.user)
@@ -238,3 +311,67 @@ class OrganizationUniversalAppDetail(APIView):
                 return Response(serializer.data)
             except UniversalApp.DoesNotExist:
                 raise Http404
+
+    def put(self, request, org_path, app_path):
+        user_org = check_org_admin_permission(org_path, request.user)
+        try:
+            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
+        except UniversalApp.DoesNotExist:
+            raise Http404
+        serializer = UniversalAppCreateSerializer(app, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        if serializer.validated_data.get('path', None) and app_path != serializer.validated_data['path']:
+            if serializer.validated_data['path'] in reserved_names:
+                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+            if UniversalApp.objects.filter(path=serializer.validated_data['path']).exists():
+                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+
+        instance = serializer.save()
+        return Response(UniversalAppSerializer(instance).data)
+
+    def delete(self, request, org_path, app_path):
+        user_org = check_org_admin_permission(org_path, request.user)
+        # todo
+        try:
+            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
+            app.delete()
+        except UniversalApp.DoesNotExist:
+            raise Http404
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class OrganizationUniversalAppIcon(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, org_path, app_path):
+        user_org = check_org_view_permission(org_path, request.user)
+        try:
+            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
+        except UniversalApp.DoesNotExist:
+            raise Http404
+        if not app.icon_file:
+            raise Http404
+        response = Response()
+        response['X-Accel-Redirect'] = app.icon_file.url
+        return response
+
+    def post(self, request, org_path, app_path):
+        user_org = check_org_admin_permission(org_path, request.user)
+        try:
+            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
+        except UniversalApp.DoesNotExist:
+            raise Http404
+
+        serializer = UniversalAppIconSerializer(app, data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        location = reverse('org-app-icon', args=(org_path, app_path))
+        data = {
+            'icon_file': build_absolute_uri(location)
+        }
+        # todo response no content
+        response = Response(data)
+        response['Location'] = build_absolute_uri(location)
+        return response

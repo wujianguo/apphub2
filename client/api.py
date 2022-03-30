@@ -104,7 +104,7 @@ class Api:
                 'page': page,
                 'per_page': per_page
             }
-            return self.client.get('/' + self.username + '/apps', query)
+            return self.client.get('/users/' + self.username + '/apps', query)
 
         def get_visible_org_list(self, page=1, per_page=10):
             query = {
@@ -206,6 +206,26 @@ class Api:
 
         def update_app(self, app):
             return self.client.put(self.base_path, app)
+
+        def remove_app(self):
+            return self.client.delete(self.base_path)
+
+        def change_or_set_icon(self, icon_file_path=None):
+            if icon_file_path is None:
+                file = generate_random_image()
+                file_path = file.name
+            else:
+                file_path = icon_file_path
+
+            with open(file_path, 'rb') as fp:
+                data = {'icon_file': fp}
+                return self.client.upload_post(self.base_path + '/icon', data=data)
+
+        def get_icon(self):
+            return self.client.get(self.base_path + '/icon')
+
+        def remove_icon(self):
+            return self.client.delete(self.base_path + '/icon')
 
         def upload_package(self, file_path):
             with open(file_path, 'rb') as fp:

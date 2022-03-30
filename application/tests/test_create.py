@@ -5,6 +5,7 @@ from util.tests import BaseTestCase
 def skip_if_base(func):
     def wrap(self, *args, **kwargs):
         if not self.kind():
+            self.skipTest('skip base.')
             return
         return func(self, *args, **kwargs)
     return wrap
@@ -185,6 +186,21 @@ class BaseUniversalAppCreateTest(BaseTestCase):
             r = namespace.create_app(app)
             self.assert_status_201(r)
 
+    @skip_if_base
+    def test_delete_app(self):
+        larry = self.create_and_get_user()
+        namespace = self.create_and_get_namespace(larry, larry.client.username)
+        app = self.chrome_app()
+        r = namespace.create_app(app)
+        self.assert_status_201(r)
+
+        app_api = namespace.get_app_api(app['path'])
+
+        r = app_api.remove_app()
+        self.assert_status_204(r)
+
+        r = app_api.get_app()
+        self.assert_status_404(r)
 
 class UserUniversalAppCreateTest(BaseUniversalAppCreateTest):
 

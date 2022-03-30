@@ -17,7 +17,7 @@ Including another URLconf
 from django.urls import include, path
 from user.views import MeUser
 from organization.views import OrganizationList
-from application.views import UniversalAppList, UserUniversalAppDetail, OrganizationUniversalAppList, OrganizationUniversalAppDetail
+from application.views import UniversalAppList, UserUniversalAppList, UserUniversalAppDetail, UserUniversalAppIcon, OrganizationUniversalAppList, OrganizationUniversalAppDetail, OrganizationUniversalAppIcon
 from distribute.views import UserAppPackageList, UserAppPackageDetail, UserAppReleaseList, UserAppReleaseDetail, UserStoreAppVivo
 
 urlpatterns = [
@@ -26,9 +26,12 @@ urlpatterns = [
     path('api/orgs', OrganizationList.as_view()),
     path('api/orgs/<org_path>/apps', OrganizationUniversalAppList.as_view()),
     path('api/orgs/<org_path>/apps/<app_path>', OrganizationUniversalAppDetail.as_view()),
+    path('api/orgs/<org_path>/apps/<app_path>/icon', OrganizationUniversalAppIcon.as_view(), name='org-app-icon'),
     path('api/orgs/', include('organization.urls')),
     path('api/apps', UniversalAppList.as_view()),
+    path('api/users/<username>/apps', UserUniversalAppList.as_view()),
     path('api/users/<username>/apps/<path>', UserUniversalAppDetail.as_view(), name='app-detail'),
+    path('api/users/<username>/apps/<path>/icon', UserUniversalAppIcon.as_view(), name='user-app-icon'),
     path('api/users/<username>/apps/<path>/packages', UserAppPackageList.as_view()),
     path('api/users/<username>/apps/<path>/packages/<int:internal_build>', UserAppPackageDetail.as_view()),
     path('api/users/<username>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),
