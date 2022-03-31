@@ -1,52 +1,19 @@
 from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
-from django.db.models import Q
-from django.core.exceptions import PermissionDenied
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from application.models import UniversalApp, UniversalAppUser
 from application.serializers import *
+from application.permissions import *
 from organization.models import OrganizationUser, Organization
+from organization.views import check_org_admin_permission
 from util.visibility import VisibilityType
 from util.choice import ChoiceField
 from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
-
-def viewer_query(user, path, ownername):
-    if user.is_authenticated:
-        allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-        q1 = Q(app__path=path, app__owner__username=ownername)
-        q2 = Q(app__visibility__in=allow_visibility)
-        q3 = Q(user=user)
-        return (q2 | q3) & q1
-    else:
-        q1 = Q(app__path=path, app__owner__username=ownername)
-        q2 = Q(app__visibility=VisibilityType.Public)
-        return q1 & q2
-
-def check_app_view_permission(user, path, ownername):
-    app_user = UniversalAppUser.objects.filter(viewer_query(user, path, ownername))
-    if not app_user.exists():
-        raise Http404
-    return app_user.first()
-
-def check_app_manager_permission(user, path, ownername):
-    try:
-        manager_role = UniversalAppUser.ApplicationUserRole.Manager
-        user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=ownername, user=user)
-        if user_app.role != manager_role:
-            raise PermissionDenied
-        return user_app
-    except UniversalAppUser.DoesNotExist:
-        try:
-            allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            UniversalApp.objects.get(path=path, owner__username=ownername, visibility__in=allow_visibility)
-            raise PermissionDenied
-        except UniversalApp.DoesNotExist:
-            raise Http404
 
 class UniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -93,7 +60,7 @@ class UniversalAppList(APIView):
         instance = serializer.save(owner=request.user)
         app_user = UniversalAppUser.objects.create(app=instance, user=request.user, role=UniversalAppUser.ApplicationUserRole.Manager)
         data = UniversalAppSerializer(instance).data
-        data['role'] = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices).to_representation(app_user.role)
+        # data['role'] = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices).to_representation(app_user.role)
         response = Response(data, status=status.HTTP_201_CREATED)
         location = reverse('app-detail', args=(path, request.user.username))
         response['Location'] = request.build_absolute_uri(location)
@@ -124,7 +91,6 @@ class UserUniversalAppList(APIView):
             serializer = UniversalAppSerializer(apps, many=True)
             return Response(serializer.data)
 
-
 class AuthenticatedUserApplicationList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -132,67 +98,79 @@ class AuthenticatedUserApplicationList(APIView):
         return UserUniversalAppList().get(request, request.user.username)
 
 
-class UserUniversalAppDetail(APIView):
+class UniversalAppDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, username, path):
-        if request.user.is_authenticated:
-            try:
-                user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=username, user=request.user)
-                serializer = UserUniversalAppSerializer(user_app)
-                return Response(serializer.data)
-            except UniversalAppUser.DoesNotExist:
-                pass
-        try:
-            if request.user.is_authenticated:
-                allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            else:
-                allow_visibility = [VisibilityType.Public]
-            app = UniversalApp.objects.get(path=path, owner__username=username, visibility__in=allow_visibility)
-            serializer = UniversalAppSerializer(app)
-            return Response(serializer.data)
-        except UniversalApp.DoesNotExist:
-            raise Http404
+    def get_namespace(self, path):
+        pass
 
-    def put(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
-        serializer = UniversalAppCreateSerializer(user_app.app, data=request.data, partial=True)
+    def path_exists(self, namespace, path):
+        pass
+
+    def get(self, request, namespace, path):
+        app = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        serializer = UniversalAppSerializer(app)
+        return Response(serializer.data)
+
+    def put(self, request, namespace, path):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        serializer = UniversalAppCreateSerializer(app, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         if serializer.validated_data.get('path', None) and path != serializer.validated_data['path']:
             if serializer.validated_data['path'] in reserved_names:
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-            if UniversalApp.objects.filter(path=serializer.validated_data['path']).exists():
+            if self.path_exists(namespace, serializer.validated_data['path']):
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
         instance = serializer.save()
         return Response(UniversalAppSerializer(instance).data)
 
-    def delete(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
+    def delete(self, request, namespace, path):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         # todo
-        user_app.app.delete()
+        app.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class UserUniversalAppIcon(APIView):
+class UserUniversalAppDetail(UniversalAppDetail):
+    def get_namespace(self, path):
+        return user_namespace(path)
+
+    def path_exists(self, namespace, path):
+        return UniversalApp.objects.filter(path=path, owner__username=namespace).exists()
+
+class OrganizationUniversalAppDetail(UniversalAppDetail):
+    def get_namespace(self, path):
+        return organization_namespace(path)
+
+    def path_exists(self, namespace, path):
+        return UniversalApp.objects.filter(path=path, org__path=namespace).exists()
+
+class UniversalAppIcon(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, username, path):
-        user_app = check_app_view_permission(request.user, path, username)
-        if not user_app.app.icon_file:
+    def get_namespace(self, path):
+        pass
+
+    def url_name(self):
+        pass
+
+    def get(self, request, namespace, path):
+        app = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        if not app.icon_file:
             raise Http404
         response = Response()
-        response['X-Accel-Redirect'] = user_app.app.icon_file.url
+        response['X-Accel-Redirect'] = app.icon_file.url
         return response
 
-    def post(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
-        serializer = UniversalAppIconSerializer(user_app.app, data=request.data)
+    def post(self, request, namespace, path):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        serializer = UniversalAppIconSerializer(app, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
-        location = reverse('user-app-icon', args=(username, path))
+        location = reverse(self.url_name(), args=(namespace, path))
         data = {
             'icon_file': build_absolute_uri(location)
         }
@@ -201,39 +179,20 @@ class UserUniversalAppIcon(APIView):
         response['Location'] = build_absolute_uri(location)
         return response
 
-# org
-def org_viewer_query(user, path):
-    if user.is_authenticated:
-        allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-        q1 = Q(org__path=path)
-        q2 = Q(org__visibility__in=allow_visibility)
-        q3 = Q(user=user)
-        return (q2 | q3) & q1
-    else:
-        q1 = Q(org__path=path)
-        q2 = Q(org__visibility=VisibilityType.Public)
-        return q1 & q2
+class UserUniversalAppIcon(UniversalAppIcon):
+    def get_namespace(self, path):
+        return user_namespace(path)
 
-def check_org_view_permission(path, user):
-    org_user = OrganizationUser.objects.filter(org_viewer_query(user, path))
-    if not org_user.exists():
-        raise Http404
-    return org_user.first()
+    def url_name(self):
+        return 'user-app-icon'
 
-def check_org_admin_permission(path, user):
-    try:
-        admin_role = OrganizationUser.OrganizationUserRole.Admin
-        user_org = OrganizationUser.objects.get(org__path=path, user=user)
-        if user_org.role != admin_role:
-            raise PermissionDenied
-        return user_org
-    except OrganizationUser.DoesNotExist:
-        try:
-            allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            Organization.objects.get(path=path, visibility__in=allow_visibility)
-            raise PermissionDenied
-        except Organization.DoesNotExist:
-            raise Http404
+class OrganizationUniversalAppIcon(UniversalAppIcon):
+    def get_namespace(self, path):
+        return organization_namespace(path)
+    
+    def url_name(self):
+        return 'org-app-icon'
+
 
 class OrganizationUniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -262,6 +221,7 @@ class OrganizationUniversalAppList(APIView):
         serializer = UniversalAppSerializer(apps, many=True)
         return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request, org_path):
         user_org = check_org_admin_permission(org_path, request.user)
         serializer = UniversalAppCreateSerializer(data=request.data)
@@ -278,100 +238,4 @@ class OrganizationUniversalAppList(APIView):
         response = Response(data, status=status.HTTP_201_CREATED)
         location = reverse('app-detail', args=(path, request.user.username))
         response['Location'] = request.build_absolute_uri(location)
-        return response
-
-
-class OrganizationUniversalAppDetail(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get(self, request, org_path, app_path):
-        if request.user.is_authenticated:
-            try:
-                user_app = UniversalAppUser.objects.get(app__path=app_path, app__org__name=org_path, user=request.user)
-                serializer = UserUniversalAppSerializer(user_app)
-                return Response(serializer.data)
-            except UniversalAppUser.DoesNotExist:
-                pass
-        try:
-            user_org = OrganizationUser.objects.get(org__path=org_path, user=request.user)
-            try:
-                app = UniversalApp.objects.get(path=app_path, org=user_org.org)
-                serializer = UniversalAppSerializer(app)
-                return Response(serializer.data)
-            except UniversalApp.DoesNotExist:
-                raise Http404
-        except OrganizationUser.DoesNotExist:
-            if request.user.is_authenticated:
-                allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            else:
-                allow_visibility = [VisibilityType.Public]
-            try:
-                app = UniversalApp.objects.get(path=app_path, org__path=org_path, visibility__in=allow_visibility)
-                serializer = UniversalAppSerializer(app)
-                return Response(serializer.data)
-            except UniversalApp.DoesNotExist:
-                raise Http404
-
-    def put(self, request, org_path, app_path):
-        user_org = check_org_admin_permission(org_path, request.user)
-        try:
-            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
-        except UniversalApp.DoesNotExist:
-            raise Http404
-        serializer = UniversalAppCreateSerializer(app, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        if serializer.validated_data.get('path', None) and app_path != serializer.validated_data['path']:
-            if serializer.validated_data['path'] in reserved_names:
-                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-            if UniversalApp.objects.filter(path=serializer.validated_data['path']).exists():
-                return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-
-        instance = serializer.save()
-        return Response(UniversalAppSerializer(instance).data)
-
-    def delete(self, request, org_path, app_path):
-        user_org = check_org_admin_permission(org_path, request.user)
-        # todo
-        try:
-            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
-            app.delete()
-        except UniversalApp.DoesNotExist:
-            raise Http404
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class OrganizationUniversalAppIcon(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, org_path, app_path):
-        user_org = check_org_view_permission(org_path, request.user)
-        try:
-            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
-        except UniversalApp.DoesNotExist:
-            raise Http404
-        if not app.icon_file:
-            raise Http404
-        response = Response()
-        response['X-Accel-Redirect'] = app.icon_file.url
-        return response
-
-    def post(self, request, org_path, app_path):
-        user_org = check_org_admin_permission(org_path, request.user)
-        try:
-            app = UniversalApp.objects.get(path=app_path, org=user_org.org)
-        except UniversalApp.DoesNotExist:
-            raise Http404
-
-        serializer = UniversalAppIconSerializer(app, data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        location = reverse('org-app-icon', args=(org_path, app_path))
-        data = {
-            'icon_file': build_absolute_uri(location)
-        }
-        # todo response no content
-        response = Response(data)
-        response['Location'] = build_absolute_uri(location)
         return response
