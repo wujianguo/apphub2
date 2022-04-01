@@ -44,18 +44,6 @@ def check_user_app_view_permission(user, path, ownername):
         raise Http404
     return app_user.first().app
 
-def org_app_viewer_query(user, path, org_path):
-    if user.is_authenticated:
-        allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-        q1 = Q(app__path=path, app__owner__username=org_path)
-        q2 = Q(app__visibility__in=allow_visibility)
-        q3 = Q(user=user)
-        return (q2 | q3) & q1
-    else:
-        q1 = Q(app__path=path, app__owner__username=org_path)
-        q2 = Q(app__visibility=VisibilityType.Public)
-        return q1 & q2
-
 def check_org_app_view_permission(user, path, org_path):
     try:
         app = UniversalApp.objects.get(org__path=org_path, path=path)
@@ -127,7 +115,7 @@ def check_org_app_manager_permission(user, path, org_path):
     except OrganizationUser.DoesNotExist:
         try:
             allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            Organization.objects.get(path=path, visibility__in=allow_visibility)
+            Organization.objects.get(path=org_path, visibility__in=allow_visibility)
             raise PermissionDenied
         except Organization.DoesNotExist:
             raise Http404

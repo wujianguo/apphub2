@@ -17,8 +17,8 @@ Including another URLconf
 from django.urls import include, path
 from user.views import MeUser
 from organization.views import OrganizationList
-from application.views import UniversalAppList, UserUniversalAppList, UserUniversalAppDetail, UserUniversalAppIcon, OrganizationUniversalAppList, OrganizationUniversalAppDetail, OrganizationUniversalAppIcon
-from distribute.views import UserAppPackageList, UserAppPackageDetail, UserAppReleaseList, UserAppReleaseDetail, UserStoreAppVivo
+from application.views import *
+from distribute.views import *
 
 urlpatterns = [
     path('api/user', MeUser.as_view()),
@@ -27,11 +27,15 @@ urlpatterns = [
     path('api/orgs/<org_path>/apps', OrganizationUniversalAppList.as_view()),
     path('api/orgs/<namespace>/apps/<path>', OrganizationUniversalAppDetail.as_view()),
     path('api/orgs/<namespace>/apps/<path>/icon', OrganizationUniversalAppIcon.as_view(), name='org-app-icon'),
+    path('api/orgs/<namespace>/apps/<path>/members', OrganizationUniversalAppUserList.as_view()),
+    path('api/orgs/<namespace>/apps/<path>/members/<username>', OrganizationUniversalAppUserDetail.as_view(), name='org-app-user'),
     path('api/orgs/', include('organization.urls')),
     path('api/apps', UniversalAppList.as_view()),
     path('api/users/<username>/apps', UserUniversalAppList.as_view()),
     path('api/users/<namespace>/apps/<path>', UserUniversalAppDetail.as_view(), name='app-detail'),
     path('api/users/<namespace>/apps/<path>/icon', UserUniversalAppIcon.as_view(), name='user-app-icon'),
+    path('api/users/<namespace>/apps/<path>/members', UserUniversalAppUserList.as_view()),
+    path('api/users/<namespace>/apps/<path>/members/<username>', UserUniversalAppUserDetail.as_view(), name='user-app-user'),
     path('api/users/<username>/apps/<path>/packages', UserAppPackageList.as_view()),
     path('api/users/<username>/apps/<path>/packages/<int:internal_build>', UserAppPackageDetail.as_view()),
     path('api/users/<username>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),

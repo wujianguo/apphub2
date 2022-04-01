@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,10 +11,11 @@ from application.permissions import *
 from organization.models import OrganizationUser, Organization
 from organization.views import check_org_admin_permission
 from util.visibility import VisibilityType
-from util.choice import ChoiceField
 from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
+
+UserModel = get_user_model()
 
 class UniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -63,7 +65,7 @@ class UniversalAppList(APIView):
         # data['role'] = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices).to_representation(app_user.role)
         response = Response(data, status=status.HTTP_201_CREATED)
         location = reverse('app-detail', args=(path, request.user.username))
-        response['Location'] = request.build_absolute_uri(location)
+        response['Location'] = build_absolute_uri(location)
         return response
 
 
@@ -194,6 +196,112 @@ class OrganizationUniversalAppIcon(UniversalAppIcon):
         return 'org-app-icon'
 
 
+class UniversalAppUserList(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        pass
+
+    def url_name(self):
+        pass
+
+    def get(self, request, namespace, path):
+        app = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        users = UniversalAppUser.objects.filter(app=app)
+        serializer = UniversalAppUserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, namespace, path):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        serializer = UniversalAppUserAddSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        username = serializer.validated_data['username']
+        role = serializer.validated_data['role']
+        try:
+            UniversalAppUser.objects.get(app__path=path, user__username=username)
+            return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+        except UniversalAppUser.DoesNotExist:
+            try:
+                user = UserModel.objects.get(username=username)
+            except UserModel.DoesNotExist:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            instance = UniversalAppUser.objects.create(app=app, role=role, user=user)
+            serializer = UniversalAppUserSerializer(instance)
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+            location = reverse(self.url_name(), args=(namespace, path, username))
+            response['Location'] = build_absolute_uri(location)
+            return response
+
+class UserUniversalAppUserList(UniversalAppUserList):
+    def get_namespace(self, path):
+        return user_namespace(path)
+
+    def url_name(self):
+        return 'user-app-user'
+
+class OrganizationUniversalAppUserList(UniversalAppUserList):
+    def get_namespace(self, path):
+        return organization_namespace(path)
+    
+    def url_name(self):
+        return 'org-app-user'
+
+
+class UniversalAppUserDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        pass
+
+    def get_object(self, app, username):
+        try:
+            return UniversalAppUser.objects.get(app=app, user__username=username)
+        except UniversalAppUser.DoesNotExist:
+            raise Http404
+
+    def get(self, request, namespace, path, username):
+        # todo
+        app = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        app_user = self.get_object(app, username)
+        serializer = UniversalAppUserSerializer(app_user)
+        return Response(serializer.data)
+
+    def put(self, request, namespace, path, username):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        manager_role = UniversalAppUser.ApplicationUserRole.Manager
+        app_user = self.get_object(app, username)
+        serializer = UniversalAppUserSerializer(app_user, data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.username == username:
+            if serializer.validated_data.get('role', manager_role) != manager_role:
+                exists = UniversalAppUser.objects.filter(app=app, role=manager_role).exclude(user=request.user).exists()
+                if not exists:
+                    raise PermissionDenied
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, namespace, path, username):
+        app = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        manager_role = UniversalAppUser.ApplicationUserRole.Manager
+        app_user = self.get_object(app, username)
+        if request.user.username == username:
+            exists = UniversalAppUser.objects.filter(app=app, role=manager_role).exclude(user=request.user).exists()
+            if not exists:
+                raise PermissionDenied
+        app_user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class UserUniversalAppUserDetail(UniversalAppUserDetail):
+    def get_namespace(self, path):
+        return user_namespace(path)
+
+class OrganizationUniversalAppUserDetail(UniversalAppUserDetail):
+    def get_namespace(self, path):
+        return organization_namespace(path)
+
+
 class OrganizationUniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -237,5 +345,5 @@ class OrganizationUniversalAppList(APIView):
         data = UniversalAppSerializer(instance).data
         response = Response(data, status=status.HTTP_201_CREATED)
         location = reverse('app-detail', args=(path, request.user.username))
-        response['Location'] = request.build_absolute_uri(location)
+        response['Location'] = build_absolute_uri(location)
         return response

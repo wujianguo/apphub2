@@ -227,6 +227,28 @@ class Api:
         def remove_icon(self):
             return self.client.delete(self.base_path + '/icon')
 
+        def add_member(self, username, role):
+            collaborator = {
+                'username': username,
+                'role': role
+            }
+            return self.client.post(self.base_path + '/members', collaborator)
+
+        def get_member(self, username):
+            return self.client.get(self.base_path + '/members/' + username)
+
+        def get_member_list(self):
+            return self.client.get(self.base_path + '/members')
+
+        def change_member_role(self, username, role):
+            data = {
+                'role': role
+            }
+            return self.client.put(self.base_path + '/members/' + username, data)
+
+        def remove_member(self, username):
+            return self.client.delete(self.base_path + '/members/' + username)
+
         def upload_package(self, file_path):
             with open(file_path, 'rb') as fp:
                 data = {'file': fp}
