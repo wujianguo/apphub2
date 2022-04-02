@@ -87,9 +87,10 @@ class UserUniversalAppList(APIView):
             data = UniversalAppSerializer(apps, many=True).data
             user_apps_data = UserUniversalAppSerializer(user_apps, many=True).data
             data.extend(user_apps_data)
+            data.sort(key=lambda x: x['create_time'])
             return Response(data[(page - 1) * per_page: page * per_page])
         else:
-            apps = UniversalApp.objects.filter(visibility=VisibilityType.Public, owner__username=username).order_by('path')[(page - 1) * per_page: page * per_page]
+            apps = UniversalApp.objects.filter(visibility=VisibilityType.Public, owner__username=username).order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = UniversalAppSerializer(apps, many=True)
             return Response(serializer.data)
 
@@ -311,18 +312,18 @@ class OrganizationUniversalAppList(APIView):
         if request.user.is_authenticated:
             try:
                 user_org = OrganizationUser.objects.get(org__path=org_path, user=request.user)
-                apps = UniversalApp.objects.filter(org=user_org.org).order_by('path')[(page - 1) * per_page: page * per_page]
+                apps = UniversalApp.objects.filter(org=user_org.org).order_by('create_time')[(page - 1) * per_page: page * per_page]
             except OrganizationUser.DoesNotExist:
                 try:
                     allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
                     org = Organization.objects.get(org__path=org_path, visibility__in=allow_visibility)
-                    apps = UniversalApp.objects.filter(org=org, visibility__in=allow_visibility).order_by('path')[(page - 1) * per_page: page * per_page]
+                    apps = UniversalApp.objects.filter(org=org, visibility__in=allow_visibility).order_by('create_time')[(page - 1) * per_page: page * per_page]
                 except Organization.DoesNotExist:
                     pass
         else:
             try:
-                org = Organization.objects.get(org__path=org_path, visibility=VisibilityType.Public)
-                apps = UniversalApp.objects.filter(org=org, visibility=VisibilityType.Public).order_by('path')[(page - 1) * per_page: page * per_page]
+                org = Organization.objects.get(path=org_path, visibility=VisibilityType.Public)
+                apps = UniversalApp.objects.filter(org=org, visibility=VisibilityType.Public).order_by('create_time')[(page - 1) * per_page: page * per_page]
             except Organization.DoesNotExist:
                 pass
 
