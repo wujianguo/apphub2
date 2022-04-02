@@ -32,16 +32,22 @@ def hex_to_rgb(hex_string):
 def random_between(int1, int2):
     return random.randint(min(int1, int2), max(int1, int2))
 
+def interpolate(f_co, t_co, interval):
+    det_co =[(t - f) / interval for f , t in zip(f_co, t_co)]
+    for i in range(interval):
+        yield [round(f + det * i) for f, det in zip(f_co, det_co)]
+
 def generate_icon_image(text, size=(128, 128)):
-    colors = random.choice(COLORS)
-    color1 = hex_to_rgb(colors[0])
-    color2 = hex_to_rgb(colors[1])
-    background_color = (
-        random_between(color1[0], color2[0]), 
-        random_between(color1[1], color2[1]), 
-        random_between(color1[2], color2[2]))
-    image = Image.new('RGBA', size=size, color=background_color)
+
+    image = Image.new('RGBA', size=size, color=0)
     draw = ImageDraw.Draw(image)
+
+    colors = random.choice(COLORS)
+    from_color = hex_to_rgb(colors[0])
+    to_color = hex_to_rgb(colors[1])
+    for i, color in enumerate(interpolate(from_color, to_color, image.width * 2)):
+        draw.line([(i, 0), (0, i)], tuple(color), width=1)
+
     try:
         # todo: choose font by system
         font = ImageFont.truetype('PingFang.ttc', size=int(size[0]/2))
