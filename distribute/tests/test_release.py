@@ -3,15 +3,8 @@ from client.api import Api
 from client.unit_test_client import UnitTestClient
 from util.tests import BaseTestCase
 
-def skip_if_base(func):
-    def wrap(self, *args, **kwargs):
-        if not self.kind():
-            self.skipTest('skip base.')
-            return
-        return func(self, *args, **kwargs)
-    return wrap
 
-class BaseReleaseTest(BaseTestCase):
+class UserReleaseTest(BaseTestCase):
 
     def setUp(self):
         if not os.path.exists('downloads'):
@@ -28,14 +21,15 @@ class BaseReleaseTest(BaseTestCase):
             with requests.get(url, stream=True) as r:
                 with open(self.ipa_path, 'wb') as f:
                     shutil.copyfileobj(r.raw, f)
-    def kind(self):
-        return ''
 
     def create_and_get_user(self, username='LarryPage'):
         return Api(UnitTestClient(), username, True)
 
+    def kind(self):
+        return 'User'
+
     def create_and_get_namespace(self, api, namespace):
-        pass
+        return api.get_user_api(namespace)
 
     def release_app(self, app):
         larry = self.create_and_get_user()
@@ -56,7 +50,6 @@ class BaseReleaseTest(BaseTestCase):
         self.app_api = app_api
         return r.json()
 
-    @skip_if_base
     def test_create_success(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -86,7 +79,6 @@ class BaseReleaseTest(BaseTestCase):
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
 
-    @skip_if_base
     def test_vivo_store(self):
         app = self.chrome_app()
         r = self.release_app(app)
@@ -104,11 +96,3 @@ class BaseReleaseTest(BaseTestCase):
         self.assertDictEqual(r.json(), r2.json())
         # r = self.app_api.submit_store(release_id, '', 'Vivo')
         # self.assert_status_201(r)
-
-class UserReleaseTest(BaseReleaseTest):
-
-    def kind(self):
-        return 'User'
-
-    def create_and_get_namespace(self, api, namespace):
-        return api.get_user_api(namespace)

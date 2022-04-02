@@ -2,35 +2,27 @@ from client.api import Api
 from client.unit_test_client import UnitTestClient
 from util.tests import BaseTestCase
 
-def skip_if_base(func):
-    def wrap(self, *args, **kwargs):
-        if not self.kind():
-            self.skipTest('skip base.')
-            return
-        return func(self, *args, **kwargs)
-    return wrap
 
-class BaseUniversalAppCreateTest(BaseTestCase):
-
-    def kind(self):
-        return ''
-
-    def suffix_namespace(self, namespace):
-        pass
+class UserUniversalAppCreateTest(BaseTestCase):
 
     def create_and_get_user(self, username='LarryPage', auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
+    def kind(self):
+        return 'User'
+
+    def suffix_namespace(self, namespace):
+        return namespace
+
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
-        pass
+        return api.get_user_api(namespace)
 
     def get_namespace(self, api, namespace):
-        pass
+        return api.get_user_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
-        pass
+        return api.get_user_api(namespace).get_app_api(app_path)
 
-    @skip_if_base
     def test_create_success(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -44,7 +36,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         self.assert_status_200(r2)
         self.assertDictEqual(r.json(), r2.json())
 
-    @skip_if_base
     def test_invalid_path(self):
         # 1. only letters, numbers, underscores or hyphens
         # 2. 0 < len(path) <= 32
@@ -79,7 +70,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = namespace.create_app(app)
         self.assert_status_409(r)
 
-    @skip_if_base
     def test_duplicate_path(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -97,7 +87,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = bill_namespace.create_app(app2)
         self.assert_status_201(r)
 
-    @skip_if_base
     def test_duplicate_install_slug(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -115,7 +104,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = bill_namespace.create_app(app2)
         self.assert_status_409(r)
 
-    @skip_if_base
     def test_required(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -127,7 +115,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
             r = namespace.create_app(app)
             self.assert_status_400(r)
 
-    @skip_if_base
     def test_enable_os(self):
         case_list = [
             {
@@ -155,7 +142,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
             r = namespace.create_app(app)
             self.assert_status(r, case['status'])
 
-    @skip_if_base
     def test_invalid_name(self):
         # 0 < len(name) <= 128
         larry = self.create_and_get_user()
@@ -176,7 +162,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-    @skip_if_base
     def test_visibility(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -195,7 +180,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
             r = namespace.create_app(app)
             self.assert_status_201(r)
 
-    @skip_if_base
     def test_delete_app(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -211,7 +195,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = app_api.get_app()
         self.assert_status_404(r)
 
-    @skip_if_base
     def test_remove_public_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -248,7 +231,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
 
-    @skip_if_base
     def test_remove_internal_org_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -285,7 +267,6 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
 
-    @skip_if_base
     def test_remove_private_org_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username, visibility='Private')
@@ -323,7 +304,10 @@ class BaseUniversalAppCreateTest(BaseTestCase):
         self.assert_status_204(r)
 
 
-class UserUniversalAppCreateTest(BaseUniversalAppCreateTest):
+class UserUniversalAppCreate2Test(BaseTestCase):
+
+    def create_and_get_user(self, username='LarryPage', auto_login=True):
+        return Api(UnitTestClient(), username, auto_login)
 
     def kind(self):
         return 'User'
@@ -355,7 +339,7 @@ class UserUniversalAppCreateTest(BaseUniversalAppCreateTest):
         self.assert_status_401(r)
 
 
-class OrganizationUniversalAppCreateTest(BaseUniversalAppCreateTest):
+class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
 
     def kind(self):
         return 'Organization'

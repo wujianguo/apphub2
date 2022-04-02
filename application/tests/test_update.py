@@ -3,35 +3,27 @@ from client.api import Api
 from client.unit_test_client import UnitTestClient
 from util.tests import BaseTestCase
 
-def skip_if_base(func):
-    def wrap(self, *args, **kwargs):
-        if not self.kind():
-            self.skipTest('skip base.')
-            return
-        return func(self, *args, **kwargs)
-    return wrap
 
-class BaseUniversalAppUpdateTest(BaseTestCase):
-
-    def kind(self):
-        return ''
-
-    def suffix_namespace(self, namespace):
-        pass
+class UserUniversalAppUpdateTest(BaseTestCase):
 
     def create_and_get_user(self, username='LarryPage', auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
+    def kind(self):
+        return 'User'
+
+    def suffix_namespace(self, namespace):
+        return namespace
+
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
-        pass
+        return api.get_user_api(namespace)
 
     def get_namespace(self, api, namespace):
-        pass
+        return api.get_user_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
-        pass
+        return api.get_user_api(namespace).get_app_api(app_path)
 
-    @skip_if_base
     def test_modify_app_path(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -66,7 +58,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         del new_value['update_time']
         self.assertDictEqual(new_value, old_value)
 
-    @skip_if_base
     def test_modify_invalid_path(self):
         # 1. only letters, numbers, underscores or hyphens
         # 2. 0 < len(path) <= 32
@@ -90,7 +81,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = app_api.update_app({'path': new_path})
         self.assert_status_200(r)
 
-    @skip_if_base
     def test_modify_duplicate_path(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -110,7 +100,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = app_api.update_app({'path': new_path})
         self.assert_status_409(r)
 
-    @skip_if_base
     def test_modify_app_name(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -132,7 +121,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = app_api.update_app({'name': name})
         self.assert_status_400(r)
 
-    @skip_if_base
     def test_modify_app_visibility(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -151,7 +139,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
             r = app_api.update_app({'visibility': visibility})
             self.assert_status_200(r)
 
-    @skip_if_base
     def test_upload_icon(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -181,7 +168,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = app_api.change_or_set_icon(file_path)
         self.assert_status_400(r)
 
-    @skip_if_base
     def test_update_public_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -217,7 +203,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = anonymous_app_api.update_app(update_app)
         self.assert_status_401(r)
 
-    @skip_if_base
     def test_update_internal_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
@@ -253,7 +238,6 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = anonymous_app_api.update_app(update_app)
         self.assert_status_401(r)
 
-    @skip_if_base
     def test_update_private_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username, visibility='Private')
@@ -289,25 +273,7 @@ class BaseUniversalAppUpdateTest(BaseTestCase):
         r = anonymous_app_api.update_app(update_app)
         self.assert_status_401(r)
 
-
-class UserUniversalAppUpdateTest(BaseUniversalAppUpdateTest):
-
-    def kind(self):
-        return 'User'
-
-    def suffix_namespace(self, namespace):
-        return namespace
-
-    def create_and_get_namespace(self, api, namespace, visibility='Public'):
-        return api.get_user_api(namespace)
-
-    def get_namespace(self, api, namespace):
-        return api.get_user_api(namespace)
-
-    def get_app_api(self, api, namespace, app_path):
-        return api.get_user_api(namespace).get_app_api(app_path)
-
-class OrganizationUniversalAppUpdateTest(BaseUniversalAppUpdateTest):
+class OrganizationUniversalAppUpdateTest(UserUniversalAppUpdateTest):
 
     def kind(self):
         return 'Organization'
