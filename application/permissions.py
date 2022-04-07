@@ -133,7 +133,6 @@ def check_org_app_view_permission(user, path, org_path):
     except UniversalApp.DoesNotExist:
         raise Http404
 
-
 def check_app_view_permission(user, path, namespace):
     if namespace.is_user():
         return check_user_app_view_permission(user, path, namespace.path)
@@ -167,3 +166,32 @@ def check_app_manager_permission(user, path, namespace):
         return check_user_app_manager_permission(user, path, namespace.path)
     if namespace.is_organization():
         return check_org_app_manager_permission(user, path, namespace.path)
+
+
+def check_user_app_upload_permission(user, path, ownername):
+    try:
+        user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=ownername, user=user)
+        if user_app.role != Role.Owner and user_app.role != Role.Manager and user_app.role != Role.Developer:
+            raise PermissionDenied
+        return user_app.app, UserRoleKind.application(user_app.role)
+    except UniversalAppUser.DoesNotExist:
+        try:
+            allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
+            UniversalApp.objects.get(path=path, owner__username=ownername, visibility__in=allow_visibility)
+            raise PermissionDenied
+        except UniversalApp.DoesNotExist:
+            raise Http404
+
+def check_org_app_upload_permission(user, path, org_path):
+    app, role = check_org_app_view_permission(user, path, org_path)
+    if role and role.role != Role.Manager and role.role != Role.Owner and role.role != Role.Developer:
+        raise PermissionDenied
+    if role is None:
+        raise PermissionDenied
+    return app, role
+
+def check_app_upload_permission(user, path, namespace):
+    if namespace.is_user():
+        return check_user_app_upload_permission(user, path, namespace.path)
+    if namespace.is_organization():
+        return check_org_app_upload_permission(user, path, namespace.path)

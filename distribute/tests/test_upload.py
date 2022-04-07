@@ -73,3 +73,24 @@ class UserUploadPackageTest(BaseTestCase):
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
 
+
+class OrganizationUserUploadPackageTest(UserUploadPackageTest):
+
+    def kind(self):
+        return 'Organization'
+
+    def suffix_namespace(self, namespace):
+        return namespace + '_org'
+
+    def create_and_get_namespace(self, api, namespace, visibility='Public'):
+        org = self.generate_org(1, visibility=visibility)
+        org['path'] = namespace
+        api.get_user_api().create_org(org)
+        return api.get_org_api(org['path'])
+
+    def get_namespace(self, api, namespace):
+        api.get_org_api(namespace)
+
+    def get_app_api(self, api, namespace, app_path):
+        return api.get_org_api(namespace).get_app_api(app_path)
+

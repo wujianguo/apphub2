@@ -1,30 +1,11 @@
-import uuid, hashlib
+import hashlib
 from django.db import models
-from django.db.models.signals import post_save
 from django.conf import settings
-from django.dispatch import receiver
-from application.models import UniversalApp, Application
+from application.models import Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
 from util.url import get_file_extension
 
-
-# alpha, beta, production, ...
-class DeploymentEnvironment(models.Model):
-    app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
-    name = models.SlugField(max_length=32)
-    key = models.UUIDField(default=uuid.uuid4)
-    create_time = models.DateTimeField(auto_now_add=True)
-    update_time = models.DateTimeField(auto_now=True)
-
-@receiver(post_save, sender=UniversalApp)
-def notify_app_save(sender, instance, created, **kwargs):
-    if not created:
-        return
-    DeploymentEnvironment.objects.bulk_create([
-        DeploymentEnvironment(app=instance, name='alpha'),
-        DeploymentEnvironment(app=instance, name='production')
-    ])
 
 def distribute_package_path(instance, filename):
     universal_app = instance.app.universal_app
@@ -72,7 +53,6 @@ class Package(models.Model):
         super(Package, self).save(*args, **kwargs)
 
 class Release(models.Model):
-    deployment = models.ForeignKey(DeploymentEnvironment, on_delete=models.CASCADE)
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     package = models.ForeignKey(Package, on_delete=models.CASCADE)
     release_id = models.IntegerField()

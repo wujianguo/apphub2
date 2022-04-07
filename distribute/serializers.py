@@ -1,18 +1,19 @@
 from django.db.models import Max
 from rest_framework import serializers
-from distribute.models import DeploymentEnvironment, Package, Release, StoreApp, ReleaseStore
+from distribute.models import Package, Release, StoreApp, ReleaseStore
 from distribute.stores.base import StoreType
 from distribute.stores.store import get_store
 from util.choice import ChoiceField
+from util.url import build_absolute_uri
 
 class PackageSerializer(serializers.ModelSerializer):
-    icon_file = serializers.SerializerMethodField()
     package_file = serializers.SerializerMethodField()
-
-    def get_icon_file(self, obj):
-        return ''
+    icon_file = serializers.SerializerMethodField()
 
     def get_package_file(self, obj):
+        return build_absolute_uri(obj.package_file.url)
+
+    def get_icon_file(self, obj):
         return ''
 
     class Meta:
@@ -46,7 +47,7 @@ class ReleaseSerializer(serializers.ModelSerializer):
     icon_file = serializers.SerializerMethodField()
 
     def get_package_file(self, obj):
-        return ''
+        return build_absolute_uri(obj.package.package_file.url)
 
     def get_icon_file(self, obj):
         return ''
@@ -67,19 +68,14 @@ class ReleaseCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         universal_app = validated_data['universal_app']
         package_id = validated_data['package_id']
-        environment = validated_data['environment']
         try:
             package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
         except Package.DoesNotExist:
             raise serializers.ValidationError('package_id is not found.')
-        try:
-            deployment = DeploymentEnvironment.objects.get(app=universal_app, name=environment)
-        except DeploymentEnvironment.DoesNotExist:
-            raise serializers.ValidationError('Environment is not found.')
+
         release_id = Release.objects.filter(app__universal_app=universal_app).count() + 1
         app = package.app
         instance = Release.objects.create(
-            deployment=deployment,
             app=app,
             package=package,
             release_id=release_id,

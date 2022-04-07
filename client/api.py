@@ -265,11 +265,11 @@ class Api:
         def get_one_package(self, package_id):
             return self.client.get(self.base_path + '/packages/' + str(package_id))
 
-        def create_release(self, environment, release):
-            return self.client.post(self.base_path + '/releases/' + environment, release)
+        def create_release(self, release):
+            return self.client.post(self.base_path + '/releases', release)
 
-        def get_release_list(self, environment):
-            return self.client.get(self.base_path + '/releases/' + environment)
+        def get_release_list(self):
+            return self.client.get(self.base_path + '/releases')
 
         def get_one_release(self, release_id):
             return self.client.get(self.base_path + '/releases/' + str(release_id))

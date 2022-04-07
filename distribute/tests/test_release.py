@@ -41,12 +41,11 @@ class UserReleaseTest(BaseTestCase):
         r = app_api.upload_package(self.apk_path)
         package_id = r.json()['package_id']
 
-        env = 'production'
         release = {
             'package_id': package_id,
             'enabled': True
         }
-        r = app_api.create_release(env, release)
+        r = app_api.create_release(release)
         self.app_api = app_api
         return r.json()
 
@@ -54,24 +53,24 @@ class UserReleaseTest(BaseTestCase):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         app = self.chrome_app()
-        app["enable_os"] = ["Android"]
+        app["enable_os"] = ["iOS"]
         namespace.create_app(app)
         path = app['path']
 
         app_api = namespace.get_app_api(path)
-        r = app_api.upload_package(self.apk_path)
+        r = app_api.upload_package(self.ipa_path)
         self.assert_status_201(r)
         package_id = r.json()['package_id']
 
-        env = 'production'
         release = {
             'package_id': package_id,
             'enabled': True
         }
-        r = app_api.create_release(env, release)
+        r = app_api.create_release(release)
+        print(r.json())
         self.assert_status_201(r)
         release_id = r.json()['release_id']
-        r2 = app_api.get_release_list(env)
+        r2 = app_api.get_release_list()
         self.assert_status_200(r2)
         self.assert_list_length(r2, 1)
         self.assertDictEqual(r.json(), r2.json()[0])
@@ -96,3 +95,24 @@ class UserReleaseTest(BaseTestCase):
         self.assertDictEqual(r.json(), r2.json())
         # r = self.app_api.submit_store(release_id, '', 'Vivo')
         # self.assert_status_201(r)
+
+class OrganizationReleaseTest(UserReleaseTest):
+
+    def kind(self):
+        return 'Organization'
+
+    def suffix_namespace(self, namespace):
+        return namespace + '_org'
+
+    def create_and_get_namespace(self, api, namespace, visibility='Public'):
+        org = self.generate_org(1, visibility=visibility)
+        org['path'] = namespace
+        api.get_user_api().create_org(org)
+        return api.get_org_api(org['path'])
+
+    def get_namespace(self, api, namespace):
+        api.get_org_api(namespace)
+
+    def get_app_api(self, api, namespace, app_path):
+        return api.get_org_api(namespace).get_app_api(app_path)
+

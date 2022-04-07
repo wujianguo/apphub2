@@ -8,9 +8,9 @@ from rest_framework.response import Response
 from distribute.serializers import *
 from distribute.package_parser import parser
 from distribute.models import Release
-from application.models import Application, UniversalApp, UniversalAppUser
-from util.visibility import VisibilityType
-from util.role import Role
+from application.models import Application
+from application.permissions import *
+from util.url import get_file_extension
 
 
 def create_package(request, universal_app):
@@ -18,7 +18,7 @@ def create_package(request, universal_app):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     file = serializer.validated_data['file']
-    ext = file.name.split('.')[-1]
+    ext = get_file_extension(file.name)
     pkg = parser.parse(file.file, ext)
     if pkg is None:
         raise serializers.ValidationError('Can not parse the package.')
@@ -54,54 +54,33 @@ def create_package(request, universal_app):
     serializer = PackageSerializer(instance, context={'request': request})
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-def viewer_query(user, path, ownername):
-    if user.is_authenticated:
-        allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-        q1 = Q(app__path=path, app__owner__username=ownername)
-        q2 = Q(app__visibility__in=allow_visibility)
-        q3 = Q(user=user)
-        return (q2 | q3) & q1
-    else:
-        q1 = Q(app__path=path, app__owner__username=ownername)
-        q2 = Q(app__visibility=VisibilityType.Public)
-        return q1 & q2
-
-def check_app_view_permission(user, path, ownername):
-    app_user = UniversalAppUser.objects.filter(viewer_query(user, path, ownername))
-    if not app_user.exists():
-        raise Http404
-    return app_user.first()
-
-def check_app_manager_permission(user, path, ownername):
-    try:
-        user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=ownername, user=user)
-        if user_app.role != Role.Owner and user_app.role != Role.Manager:
-            raise PermissionDenied
-        return user_app
-    except UniversalAppUser.DoesNotExist:
-        try:
-            allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-            UniversalApp.objects.get(path=path, owner__username=ownername, visibility__in=allow_visibility)
-            raise PermissionDenied
-        except UniversalApp.DoesNotExist:
-            raise Http404
-
 
 class UserAppPackageList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, username, path):
-        user_app = check_app_view_permission(request.user, path, username)
-        packages = Package.objects.filter(app__universal_app=user_app.app)
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get(self, request, namespace, path):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        packages = Package.objects.filter(app__universal_app=app)
         serializer = PackageSerializer(packages, many=True, context={'request': request})
         return Response(serializer.data)
 
-    def post(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
-        return create_package(request, user_app.app)
+    def post(self, request, namespace, path):
+        app, role = check_app_upload_permission(request.user, path, self.get_namespace(namespace))
+        return create_package(request, app)
+
+class OrganizationAppPackageList(UserAppPackageList):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+
 
 class UserAppPackageDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
 
     def get_object(self, universal_app, package_id):
         try:
@@ -109,33 +88,48 @@ class UserAppPackageDetail(APIView):
         except Package.DoesNotExist:
             raise Http404
 
-    def get(self, request, username, path, package_id):
-        user_app = check_app_view_permission(request.user, path, username)
-        package = self.get_object(user_app.app, package_id)
+    def get(self, request, namespace, path, package_id):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        package = self.get_object(app, package_id)
         serializer = PackageSerializer(package, context={'request': request})
         return Response(serializer.data)
+
+class OrganizationAppPackageDetail(UserAppPackageDetail):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
 
 
 class UserAppReleaseList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, username, path, environment):
-        user_app = check_app_view_permission(request.user, path, username)
-        releases = Release.objects.filter(app__universal_app=user_app.app, deployment__name=environment)
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get(self, request, namespace, path):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        releases = Release.objects.filter(app__universal_app=app)
         serializer = ReleaseSerializer(releases, many=True)
         return Response(serializer.data)
 
-    def post(self, request, username, path, environment):
-        user_app = check_app_manager_permission(request.user, path, username)
+    def post(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         serializer = ReleaseCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        instance = serializer.save(universal_app=user_app.app, environment=environment)
+        instance = serializer.save(universal_app=app)
         data = ReleaseSerializer(instance).data
         return Response(data, status=status.HTTP_201_CREATED)
 
+class OrganizationAppReleaseList(UserAppReleaseList):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+
+
 class UserAppReleaseDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
 
     def get_object(self, universal_app, release_id):
         try:
@@ -143,29 +137,40 @@ class UserAppReleaseDetail(APIView):
         except Package.DoesNotExist:
             raise Http404
 
-    def get(self, request, username, path, release_id):
-        user_app = check_app_view_permission(request.user, path, username)
-        release = self.get_object(user_app.app, release_id)
+    def get(self, request, namespace, path, release_id):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        release = self.get_object(app, release_id)
         serializer = ReleaseSerializer(release)
         return Response(serializer.data)
+
+class OrganizationAppReleaseDetail(UserAppReleaseDetail):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
 
 class UserStoreAppVivo(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get(self, request, namespace, path):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         try:
-            store_app = StoreApp.objects.get(app__universal_app=user_app.app)
+            store_app = StoreApp.objects.get(app__universal_app=app)
         except StoreApp.DoesNotExist:
             raise Http404
         serializer = StoreAppSerializer(store_app)
         return Response(serializer.data)
 
-    def post(self, request, username, path):
-        user_app = check_app_manager_permission(request.user, path, username)
+    def post(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         serializer = StoreAppVivoAuthSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        instance = serializer.save(universal_app=user_app.app)
+        instance = serializer.save(universal_app=app)
         data = StoreAppSerializer(instance).data
         return Response(data, status=status.HTTP_201_CREATED)
+
+class OrganizationStoreAppVivo(UserStoreAppVivo):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
