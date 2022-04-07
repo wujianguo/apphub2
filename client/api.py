@@ -262,8 +262,8 @@ class Api:
             }
             return self.client.get(self.base_path + '/packages', query)
 
-        def get_one_package(self, internal_build):
-            return self.client.get(self.base_path + '/packages/' + str(internal_build))
+        def get_one_package(self, package_id):
+            return self.client.get(self.base_path + '/packages/' + str(package_id))
 
         def create_release(self, environment, release):
             return self.client.post(self.base_path + '/releases/' + environment, release)

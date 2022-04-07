@@ -29,7 +29,7 @@ def notify_app_save(sender, instance, created, **kwargs):
 def distribute_package_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
-    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + get_file_extension(filename, 'zip')
+    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename, 'zip')
     if universal_app.org is not None:
       return 'orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
@@ -38,13 +38,14 @@ def distribute_package_path(instance, filename):
 def distribute_icon_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
-    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.internal_build) + '.' + get_file_extension(filename)
+    name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename)
     if instance.app.universal_app.org is not None:
       return 'orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
       return 'users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 class Package(models.Model):
+    package_id = models.IntegerField()
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     name = models.CharField(max_length=32, help_text="The app's name (extracted from the uploaded package).")
     package_file = models.FileField(upload_to=distribute_package_path)
@@ -52,7 +53,6 @@ class Package(models.Model):
     fingerprint = models.CharField(max_length=32, help_text="MD5 checksum of the package binary.")
     version = models.CharField(max_length=64, help_text="The package's version.\nFor iOS: CFBundleVersion from info.plist.\nFor Android: android:versionCode from AppManifest.xml.")
     short_version = models.CharField(max_length=64, help_text="The package's short version.\nFor iOS: CFBundleShortVersionString from info.plist.\nFor Android: android:versionName from AppManifest.xml.")
-    internal_build = models.IntegerField()
     size = models.IntegerField(help_text="The package's size in bytes.")
     min_os = models.CharField(max_length=32, help_text="The package's minimum required operating system.")
     bundle_identifier = models.CharField(max_length=64, help_text="The identifier of the apps bundle.")

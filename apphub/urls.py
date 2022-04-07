@@ -38,7 +38,7 @@ urlpatterns = [
     path('api/users/<namespace>/apps/<path>/members', UserUniversalAppUserList.as_view()),
     path('api/users/<namespace>/apps/<path>/members/<username>', UserUniversalAppUserDetail.as_view(), name='user-app-user'),
     path('api/users/<username>/apps/<path>/packages', UserAppPackageList.as_view()),
-    path('api/users/<username>/apps/<path>/packages/<int:internal_build>', UserAppPackageDetail.as_view()),
+    path('api/users/<username>/apps/<path>/packages/<int:package_id>', UserAppPackageDetail.as_view()),
     path('api/users/<username>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),
     path('api/users/<username>/apps/<path>/releases/<str:environment>', UserAppReleaseList.as_view()),
     path('api/users/<username>/apps/<path>/stores/vivo', UserStoreAppVivo.as_view()),

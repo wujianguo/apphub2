@@ -31,7 +31,7 @@ def create_package(request, universal_app):
         app = universal_app.iOS
     elif pkg.os == Application.OperatingSystem.Android:
         app = universal_app.android
-    internal_build = Package.objects.filter(app__universal_app=universal_app).count() + 1
+    package_id = Package.objects.filter(app__universal_app=universal_app).count() + 1
     instance = Package.objects.create(
         app=app,
         name=pkg.display_name,
@@ -40,7 +40,7 @@ def create_package(request, universal_app):
         version=pkg.version,
         short_version=pkg.short_version,
         bundle_identifier=pkg.bundle_identifier,
-        internal_build=internal_build,
+        package_id=package_id,
         min_os=pkg.minimum_os_version,
         extra=pkg.extra,
         size=file.size)
@@ -103,15 +103,15 @@ class UserAppPackageList(APIView):
 class UserAppPackageDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_object(self, universal_app, internal_build):
+    def get_object(self, universal_app, package_id):
         try:
-            return Package.objects.get(app__universal_app=universal_app, internal_build=internal_build)
+            return Package.objects.get(app__universal_app=universal_app, package_id=package_id)
         except Package.DoesNotExist:
             raise Http404
 
-    def get(self, request, username, path, internal_build):
+    def get(self, request, username, path, package_id):
         user_app = check_app_view_permission(request.user, path, username)
-        package = self.get_object(user_app.app, internal_build)
+        package = self.get_object(user_app.app, package_id)
         serializer = PackageSerializer(package, context={'request': request})
         return Response(serializer.data)
 

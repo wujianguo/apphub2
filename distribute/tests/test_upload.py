@@ -42,13 +42,13 @@ class UserUploadPackageTest(BaseTestCase):
         app_api = namespace.get_app_api(path)
         r = app_api.upload_package(self.ipa_path)
         self.assert_status_201(r)
-        internal_build = r.json()['internal_build']
+        package_id = r.json()['package_id']
 
         r2 = app_api.get_package_list()
         self.assert_status_200(r2)
         self.assert_list_length(r2, 1)
         self.assertDictEqual(r.json(), r2.json()[0])
-        r = app_api.get_one_package(internal_build)
+        r = app_api.get_one_package(package_id)
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
 
@@ -63,13 +63,13 @@ class UserUploadPackageTest(BaseTestCase):
         app_api = namespace.get_app_api(path)
         r = app_api.upload_package(self.apk_path)
         self.assert_status_201(r)
-        internal_build = r.json()['internal_build']
+        package_id = r.json()['package_id']
 
         r2 = app_api.get_package_list()
         self.assert_status_200(r2)
         self.assert_list_length(r2, 1)
         self.assertDictEqual(r.json(), r2.json()[0])
-        r = app_api.get_one_package(internal_build)
+        r = app_api.get_one_package(package_id)
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
 

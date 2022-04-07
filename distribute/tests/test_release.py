@@ -39,11 +39,11 @@ class UserReleaseTest(BaseTestCase):
 
         app_api = namespace.get_app_api(path)
         r = app_api.upload_package(self.apk_path)
-        internal_build = r.json()['internal_build']
+        package_id = r.json()['package_id']
 
         env = 'production'
         release = {
-            'internal_build': internal_build,
+            'package_id': package_id,
             'enabled': True
         }
         r = app_api.create_release(env, release)
@@ -61,11 +61,11 @@ class UserReleaseTest(BaseTestCase):
         app_api = namespace.get_app_api(path)
         r = app_api.upload_package(self.apk_path)
         self.assert_status_201(r)
-        internal_build = r.json()['internal_build']
+        package_id = r.json()['package_id']
 
         env = 'production'
         release = {
-            'internal_build': internal_build,
+            'package_id': package_id,
             'enabled': True
         }
         r = app_api.create_release(env, release)

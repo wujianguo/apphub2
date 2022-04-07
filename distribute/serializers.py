@@ -17,8 +17,8 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'internal_build', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'description', 'update_time', 'create_time']
-        read_only_fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'internal_build', 'size', 'bundle_identifier', 'min_os', 'channle']
+        fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'description', 'update_time', 'create_time']
+        read_only_fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'channle']
 
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,7 +35,7 @@ class ReleaseSerializer(serializers.ModelSerializer):
     fingerprint = serializers.ReadOnlyField(source='package.fingerprint')
     version = serializers.ReadOnlyField(source='package.version')
     short_version = serializers.ReadOnlyField(source='package.short_version')
-    internal_build = serializers.ReadOnlyField(source='package.internal_build')
+    package_id = serializers.ReadOnlyField(source='package.package_id')
     size = serializers.ReadOnlyField(source='package.size')
     bundle_identifier = serializers.ReadOnlyField(source='package.bundle_identifier')
     commit_id = serializers.ReadOnlyField(source='package.commit_id')
@@ -53,25 +53,25 @@ class ReleaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Release
-        fields = ['release_id', 'release_notes', 'enabled', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'internal_build', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'update_time', 'create_time']
-        read_only_fields = ['release_id', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'internal_build', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle']
+        fields = ['release_id', 'release_notes', 'enabled', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'update_time', 'create_time']
+        read_only_fields = ['release_id', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle']
 
 class ReleaseCreateSerializer(serializers.Serializer):
-    internal_build = serializers.IntegerField()
+    package_id = serializers.IntegerField()
     enabled = serializers.BooleanField(help_text="This value determines the whether a release currently is enabled or disabled.")
     release_notes = serializers.CharField(required=False, max_length=1024, help_text="The release's release notes.")
 
     class Meta:
-        fields = ['release_notes', 'enabled', 'internal_build']
+        fields = ['release_notes', 'enabled', 'package_id']
 
     def create(self, validated_data):
         universal_app = validated_data['universal_app']
-        internal_build = validated_data['internal_build']
+        package_id = validated_data['package_id']
         environment = validated_data['environment']
         try:
-            package = Package.objects.get(internal_build=internal_build, app__universal_app=universal_app)
+            package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
         except Package.DoesNotExist:
-            raise serializers.ValidationError('Internal_build is not found.')
+            raise serializers.ValidationError('package_id is not found.')
         try:
             deployment = DeploymentEnvironment.objects.get(app=universal_app, name=environment)
         except DeploymentEnvironment.DoesNotExist:
@@ -136,7 +136,7 @@ class StoreAppVivoAuthSerializer(serializers.Serializer):
 class ReleaseStoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReleaseStore
-        fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'internal_build', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'release_store_id', 'release_notes', 'store', 'state', 'operator', 'update_time', 'create_time']
+        fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'release_store_id', 'release_notes', 'store', 'state', 'operator', 'update_time', 'create_time']
 
 class ReleaseStoreCreateSerializer(serializers.Serializer):
     release_id = serializers.IntegerField()
