@@ -241,6 +241,9 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         app = self.chrome_app()
         r = namespace.create_app(app)
         self.assert_status_201(r)
+        r = namespace.get_my_app_list()
+        self.assert_status_200(r)
+        self.assert_list_length(r, 1)
 
         anonymous: Api = Api(UnitTestClient())
         anonymous_namespace = self.create_and_get_namespace(anonymous, anonymous.client.username)

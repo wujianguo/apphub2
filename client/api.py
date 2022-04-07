@@ -99,6 +99,13 @@ class Api:
             }
             return self.client.get('/' + self.username + '/orgs', query)
 
+        def get_my_app_list(self, page=1, per_page=10):
+            query = {
+                'page': page,
+                'per_page': per_page
+            }
+            return self.client.get('/user/apps', query)
+
         def get_app_list(self, page=1, per_page=10):
             query = {
                 'page': page,

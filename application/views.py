@@ -43,7 +43,7 @@ class VisibleUniversalAppList(APIView):
             user_apps_data = UserUniversalAppSerializer(user_apps, many=True).data
             app_data.extend(org_app_data)
             app_data.extend(user_apps_data)
-            app_data.sort(key=lambda x: x['create_time'])
+            # app_data.sort(key=lambda x: x['create_time'])
             return Response(app_data[(page - 1) * per_page: page * per_page])
         else:
             apps = UniversalApp.objects.filter(visibility=VisibilityType.Public).order_by('create_time')[(page - 1) * per_page: page * per_page]
@@ -103,14 +103,14 @@ class AuthenticatedUserApplicationList(APIView):
         return response
 
 
-class UniversalAppDetail(APIView):
+class UserUniversalAppDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_namespace(self, path):
-        pass
+        return Namespace.user(path)
 
     def path_exists(self, namespace, path):
-        pass
+        return UniversalApp.objects.filter(path=path, owner__username=namespace).exists()
 
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
@@ -132,7 +132,7 @@ class UniversalAppDetail(APIView):
             if self.path_exists(namespace, to_path):
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
         slug = serializer.validated_data.get('install_slug', None)
-        if slug:
+        if slug and app.install_slug != slug:
             if slug in reserved_names or UniversalApp.objects.filter(install_slug=slug).exists():
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
@@ -147,33 +147,24 @@ class UniversalAppDetail(APIView):
         app.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class UserUniversalAppDetail(UniversalAppDetail):
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-    def path_exists(self, namespace, path):
-        return UniversalApp.objects.filter(path=path, owner__username=namespace).exists()
-
-class OrganizationUniversalAppDetail(UniversalAppDetail):
+class OrganizationUniversalAppDetail(UserUniversalAppDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
     def path_exists(self, namespace, path):
         return UniversalApp.objects.filter(path=path, org__path=namespace).exists()
 
-class UniversalAppIcon(APIView):
+class UserUniversalAppIcon(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_namespace(self, path):
-        pass
+        return Namespace.user(path)
 
     def url_name(self):
-        pass
+        return 'user-app-icon'
 
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        if not app.icon_file:
-            raise Http404
         response = Response()
         response['X-Accel-Redirect'] = app.icon_file.url
         return response
@@ -193,14 +184,7 @@ class UniversalAppIcon(APIView):
         response['Location'] = build_absolute_uri(location)
         return response
 
-class UserUniversalAppIcon(UniversalAppIcon):
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-    def url_name(self):
-        return 'user-app-icon'
-
-class OrganizationUniversalAppIcon(UniversalAppIcon):
+class OrganizationUniversalAppIcon(UserUniversalAppIcon):
     def get_namespace(self, path):
         return Namespace.organization(path)
     
@@ -208,14 +192,14 @@ class OrganizationUniversalAppIcon(UniversalAppIcon):
         return 'org-app-icon'
 
 
-class UniversalAppUserList(APIView):
+class UserUniversalAppUserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_namespace(self, path):
-        pass
+        return Namespace.user(path)
 
     def url_name(self):
-        pass
+        return 'user-app-user'
 
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
@@ -245,14 +229,7 @@ class UniversalAppUserList(APIView):
             response['Location'] = build_absolute_uri(location)
             return response
 
-class UserUniversalAppUserList(UniversalAppUserList):
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-    def url_name(self):
-        return 'user-app-user'
-
-class OrganizationUniversalAppUserList(UniversalAppUserList):
+class OrganizationUniversalAppUserList(UserUniversalAppUserList):
     def get_namespace(self, path):
         return Namespace.organization(path)
     
@@ -260,11 +237,11 @@ class OrganizationUniversalAppUserList(UniversalAppUserList):
         return 'org-app-user'
 
 
-class UniversalAppUserDetail(APIView):
+class UserUniversalAppUserDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_namespace(self, path):
-        pass
+        return Namespace.user(path)
 
     def get_object(self, app, username):
         try:
@@ -299,11 +276,7 @@ class UniversalAppUserDetail(APIView):
         app_user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class UserUniversalAppUserDetail(UniversalAppUserDetail):
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-class OrganizationUniversalAppUserDetail(UniversalAppUserDetail):
+class OrganizationUniversalAppUserDetail(UserUniversalAppUserDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 

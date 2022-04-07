@@ -31,6 +31,8 @@ class OrganizationMemberTest(BaseTestCase):
         self.assert_status_400(r)
         r = org_api.add_member('jackxxx', 'Developer')
         self.assert_status_400(r)
+        r = org_api.add_member('BillGates', 'Owner')
+        self.assert_status_400(r)
         r = org_api.add_member('BillGates', 'Developer')
         self.assert_status_201(r)
         r = org_api.get_member('BillGates')

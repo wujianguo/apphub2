@@ -100,6 +100,25 @@ class UserUniversalAppUpdateTest(BaseTestCase):
         r = app_api.update_app({'path': new_path})
         self.assert_status_409(r)
 
+    def test_modify_duplicate_install_slug(self):
+        larry = self.create_and_get_user()
+        namespace = self.create_and_get_namespace(larry, larry.client.username)
+        app = self.chrome_app()
+        r = namespace.create_app(app)
+        self.assert_status_201(r)
+        app_api = namespace.get_app_api(app['path'])
+
+        install_slug = app['install_slug']
+        r = app_api.update_app({'install_slug': install_slug})
+        self.assert_status_200(r)
+
+        app2 = self.todo_app()
+        r = namespace.create_app(app2)
+        self.assert_status_201(r)
+        install_slug = app2['install_slug']
+        r = app_api.update_app({'install_slug': install_slug})
+        self.assert_status_409(r)
+
     def test_modify_app_name(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)

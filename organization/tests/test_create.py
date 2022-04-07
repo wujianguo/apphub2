@@ -121,6 +121,13 @@ class OrganizationCreateTest(BaseTestCase):
 
     def test_delete_org(self):
         org_api = self.create_org()
+        app = self.chrome_app()
+        org_api.create_app(app)
+
+        r = org_api.remove_org()
+        self.assert_status_403(r)
+
+        org_api.get_app_api(app['path']).remove_app()
 
         r = org_api.remove_org()
         self.assert_status_204(r)

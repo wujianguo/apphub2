@@ -67,7 +67,6 @@ class UserReleaseTest(BaseTestCase):
             'enabled': True
         }
         r = app_api.create_release(release)
-        print(r.json())
         self.assert_status_201(r)
         release_id = r.json()['release_id']
         r2 = app_api.get_release_list()

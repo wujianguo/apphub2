@@ -170,8 +170,6 @@ class OrganizationIcon(APIView):
 
     def get(self, request, path):
         user_org = check_org_view_permission(path, request.user)
-        if not user_org.org.icon_file:
-            raise Http404
         response = Response()
         response['X-Accel-Redirect'] = user_org.org.icon_file.url
         return response
@@ -208,7 +206,7 @@ class OrganizationUserList(APIView):
         username = serializer.validated_data['username']
         role = serializer.validated_data['role']
         if role == Role.Owner:
-            raise PermissionDenied
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
             OrganizationUser.objects.get(org__path=path, user__username=username)
             return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
