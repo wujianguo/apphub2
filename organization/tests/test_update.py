@@ -117,7 +117,7 @@ class OrganizationUpdateTest(BaseTestCase):
         org_api = self.create_org()
 
         r1 = org_api.get_icon()
-        self.assert_status_404(r1)
+        self.assert_status_200(r1)
 
         r = org_api.change_or_set_icon()
         self.assert_status_200(r)
