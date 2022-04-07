@@ -2,6 +2,7 @@ from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
 from django.db.models import Q
+from django.core.files import File
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework import permissions, status
@@ -15,6 +16,7 @@ from util.choice import ChoiceField
 from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
+from util.image import generate_icon_image
 
 UserModel = get_user_model()
 
@@ -105,6 +107,9 @@ class OrganizationList(APIView):
             return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
         instance = serializer.save(owner=request.user)
+        file = generate_icon_image(serializer.validated_data['name'])
+        instance.icon_file.save('icon.png', File(file.file))
+
         org_user = OrganizationUser.objects.create(org=instance, user=request.user, role=Role.Owner)
         data = serializer.data
         data['role'] = ChoiceField(choices=Role.choices).to_representation(org_user.role)
