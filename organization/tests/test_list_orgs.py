@@ -142,25 +142,25 @@ class OrganizationListTest(BaseTestCase):
         org21 = self.generate_org(21, 'Public')
         mark.get_user_api().create_org(org21)
 
-        larry.get_org_api(org1['path']).add_member(bill.client.username, 'Member')
-        larry.get_org_api(org2['path']).add_member(bill.client.username, 'Member')
+        larry.get_org_api(org1['path']).add_member(bill.client.username, 'Tester')
+        larry.get_org_api(org2['path']).add_member(bill.client.username, 'Tester')
 
-        bill.get_org_api(org11['path']).add_member(larry.client.username, 'Member')
-        bill.get_org_api(org12['path']).add_member(larry.client.username, 'Member')
+        bill.get_org_api(org11['path']).add_member(larry.client.username, 'Tester')
+        bill.get_org_api(org12['path']).add_member(larry.client.username, 'Tester')
 
-        bill.get_org_api(org11['path']).add_member(mark.client.username, 'Member')
-        bill.get_org_api(org12['path']).add_member(mark.client.username, 'Member')
+        bill.get_org_api(org11['path']).add_member(mark.client.username, 'Tester')
+        bill.get_org_api(org12['path']).add_member(mark.client.username, 'Tester')
 
         r = larry.get_user_api().get_visible_org_list()
         self.assert_list_length(r, 8)
         resp_list = self.get_resp_list(r)
         expect_org_info = {
-            org1['path']: 'Admin',
-            org2['path']: 'Admin',
-            org3['path']: 'Admin',
-            org4['path']: 'Admin',
-            org11['path']: 'Member',
-            org12['path']: 'Member',
+            org1['path']: 'Owner',
+            org2['path']: 'Owner',
+            org3['path']: 'Owner',
+            org4['path']: 'Owner',
+            org11['path']: 'Tester',
+            org12['path']: 'Tester',
             org14['path']: None,
             org21['path']: None
         }
@@ -171,12 +171,12 @@ class OrganizationListTest(BaseTestCase):
         self.assert_list_length(r, 8)
         resp_list = self.get_resp_list(r)
         expect_org_info = {
-            org11['path']: 'Admin',
-            org12['path']: 'Admin',
-            org13['path']: 'Admin',
-            org14['path']: 'Admin',
-            org1['path']: 'Member',
-            org2['path']: 'Member',
+            org11['path']: 'Owner',
+            org12['path']: 'Owner',
+            org13['path']: 'Owner',
+            org14['path']: 'Owner',
+            org1['path']: 'Tester',
+            org2['path']: 'Tester',
             org4['path']: None,
             org21['path']: None
         }
@@ -189,9 +189,9 @@ class OrganizationListTest(BaseTestCase):
         expect_org_info = {
             org1['path']: None,
             org4['path']: None,
-            org11['path']: 'Member',
-            org12['path']: 'Member',
-            org21['path']: 'Admin',
+            org11['path']: 'Tester',
+            org12['path']: 'Tester',
+            org21['path']: 'Owner',
             org14['path']: None
         }
         resp_org_info = dict([(org['path'], org.get('role', None)) for org in resp_list])
@@ -222,21 +222,21 @@ class OrganizationListTest(BaseTestCase):
         api.get_user_api().create_org(org)
         
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
@@ -264,21 +264,21 @@ class OrganizationListTest(BaseTestCase):
         api.get_user_api().create_org(org)
         
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
@@ -306,21 +306,21 @@ class OrganizationListTest(BaseTestCase):
         api.get_user_api().create_org(org)
         
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_user_api().get_visible_org_list()
         self.assert_status_200(r)
         self.assert_list_length(r, 1)

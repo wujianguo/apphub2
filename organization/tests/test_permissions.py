@@ -30,7 +30,7 @@ class OrganizationPermissionTest(BaseTestCase):
         path = org['path']
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Member')
+        api.get_org_api(path).add_member('BillGates', 'Tester')
         r = bill.get_org_api(path).get_org()
         self.assert_status_200(r)
 

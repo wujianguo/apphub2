@@ -10,6 +10,7 @@ from distribute.package_parser import parser
 from distribute.models import Release
 from application.models import Application, UniversalApp, UniversalAppUser
 from util.visibility import VisibilityType
+from util.role import Role
 
 
 def create_package(request, universal_app):
@@ -73,9 +74,8 @@ def check_app_view_permission(user, path, ownername):
 
 def check_app_manager_permission(user, path, ownername):
     try:
-        manager_role = UniversalAppUser.ApplicationUserRole.Manager
         user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=ownername, user=user)
-        if user_app.role != manager_role:
+        if user_app.role != Role.Owner and user_app.role != Role.Manager:
             raise PermissionDenied
         return user_app
     except UniversalAppUser.DoesNotExist:

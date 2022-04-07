@@ -117,7 +117,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         r = bill_app_api.change_member_role('LarryPage', 'Developer')
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Viewer')
+        r = app_api.change_member_role('BillGates', 'Tester')
         self.assert_status_200(r)
         r = bill_app_api.change_or_set_icon()
         self.assert_status_403(r)
@@ -132,7 +132,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         r = bill_app_api.change_or_set_icon()
         self.assert_status_200(r)
         r = bill_app_api.change_member_role('LarryPage', 'Developer')
-        self.assert_status_200(r)
+        self.assert_status_403(r)
 
     def test_remove_member(self):
         larry = self.create_and_get_user()
@@ -160,17 +160,11 @@ class UserUniversalAppMember2Test(BaseTestCase):
         r = bill_app_api.get_app()
         self.assert_status_200(r)
 
-        r = bill_app_api.remove_member('LarryPage')
+        r = app_api.remove_member('BillGates')
         self.assert_status_204(r)
 
-        r = app_api.get_app()
+        r = bill_app_api.get_app()
         self.assert_status_404(r)
-
-        r = bill_app_api.add_member('LarryPage', 'Manager')
-        self.assert_status_201(r)
-
-        r = app_api.remove_member('LarryPage')
-        self.assert_status_204(r)
 
     def test_get_public_member_permissions(self):
         larry = self.create_and_get_user()
@@ -205,7 +199,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         self.assert_status_200(r)
         self.assert_list_length(r, 2)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.get_member('LarryPage')
         self.assert_status_200(r)
         r = bill_app_api.get_member_list()
@@ -261,7 +255,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         self.assert_status_200(r)
         self.assert_list_length(r, 2)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.get_member('LarryPage')
         self.assert_status_200(r)
         r = bill_app_api.get_member_list()
@@ -316,7 +310,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         self.assert_status_200(r)
         self.assert_list_length(r, 2)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.get_member('LarryPage')
         self.assert_status_200(r)
         r = bill_app_api.get_member_list()

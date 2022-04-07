@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from util.visibility import VisibilityType
 from util.url import get_file_extension
+from util.role import Role
 
 
 def organization_directory_path(instance, filename):
@@ -14,16 +15,13 @@ class Organization(models.Model):
     description = models.CharField(max_length=1024, help_text='A short text describing the organization')
     visibility = models.IntegerField(choices=VisibilityType.choices)
     icon_file = models.ImageField(upload_to=organization_directory_path)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
 class OrganizationUser(models.Model):
-    class OrganizationUserRole(models.IntegerChoices):
-        Admin = 1
-        Collaborator = 2
-        Member = 3
     org = models.ForeignKey(Organization, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.IntegerField(OrganizationUserRole.choices)
+    role = models.IntegerField(Role.choices)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

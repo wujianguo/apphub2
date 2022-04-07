@@ -117,7 +117,7 @@ class Api:
             return Api.UniversalAppApi(self.client, path, self.username)
 
         def create_app(self, app):
-            return self.client.post('/apps', app)
+            return self.client.post('/user/apps', app)
 
         def get_visible_app_list(self, page=1, per_page=10):
             query = {

@@ -3,7 +3,7 @@ from django.conf import settings
 from util.choice import CustomChoicesMeta, ChoiceField
 from util.visibility import VisibilityType
 from util.url import get_file_extension
-
+from util.role import Role
 
 def application_directory_path(instance, filename):
     name = 'icon.' + get_file_extension(filename)
@@ -92,12 +92,8 @@ class UniversalApp(models.Model):
         return ret
 
 class UniversalAppUser(models.Model):
-    class ApplicationUserRole(models.IntegerChoices):
-        Manager = 1
-        Developer = 2
-        Viewer = 3
     app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.IntegerField(ApplicationUserRole.choices)
+    role = models.IntegerField(Role.choices)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

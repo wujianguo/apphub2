@@ -147,11 +147,11 @@ class OrganizationCreateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Collaborator')
+        api.get_org_api(path).add_member('BillGates', 'Developer')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
@@ -163,8 +163,13 @@ class OrganizationCreateTest(BaseTestCase):
         r = anonymous.get_org_api(path).remove_org()
         self.assert_status_401(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Admin')
+        r = api.get_org_api(path).change_member_role('BillGates', 'Manager')
+        self.assert_status_200(r)
         r = bill.get_org_api(path).remove_org()
+        self.assert_status_403(r)
+
+        api.get_org_api(path).remove_member('BillGates')
+        r = api.get_org_api(path).remove_org()
         self.assert_status_204(r)
 
     def test_remove_internal_org_permission(self):
@@ -175,11 +180,11 @@ class OrganizationCreateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Collaborator')
+        api.get_org_api(path).add_member('BillGates', 'Developer')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
@@ -191,8 +196,13 @@ class OrganizationCreateTest(BaseTestCase):
         r = anonymous.get_org_api(path).remove_org()
         self.assert_status_401(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Admin')
+        r = api.get_org_api(path).change_member_role('BillGates', 'Manager')
+        self.assert_status_200(r)
         r = bill.get_org_api(path).remove_org()
+        self.assert_status_403(r)
+
+        api.get_org_api(path).remove_member('BillGates')
+        r = api.get_org_api(path).remove_org()
         self.assert_status_204(r)
 
     def test_remove_private_org_permission(self):
@@ -203,11 +213,11 @@ class OrganizationCreateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Collaborator')
+        api.get_org_api(path).add_member('BillGates', 'Developer')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).remove_org()
         self.assert_status_403(r)
 
@@ -219,6 +229,11 @@ class OrganizationCreateTest(BaseTestCase):
         r = anonymous.get_org_api(path).remove_org()
         self.assert_status_401(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Admin')
+        r = api.get_org_api(path).change_member_role('BillGates', 'Manager')
+        self.assert_status_200(r)
         r = bill.get_org_api(path).remove_org()
+        self.assert_status_403(r)
+
+        api.get_org_api(path).remove_member('BillGates')
+        r = api.get_org_api(path).remove_org()
         self.assert_status_204(r)

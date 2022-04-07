@@ -4,6 +4,7 @@ from application.models import Application, UniversalApp, UniversalAppUser
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.image import generate_icon_image
+from util.role import Role
 
 class UniversalAppSerializer(serializers.ModelSerializer):
     path = serializers.SlugField(max_length=32, help_text='The path of the universal application.')
@@ -128,7 +129,6 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
     name = serializers.StringRelatedField(source='app.name')
     description = serializers.StringRelatedField(source='app.description')
     visibility = ChoiceField(VisibilityType.choices, source='app.visibility')
-    role = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices)
     update_time = serializers.ReadOnlyField(source='app.update_time')
     create_time = serializers.ReadOnlyField(source='app.create_time')
     enable_os = serializers.SerializerMethodField()
@@ -151,19 +151,20 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniversalAppUser
-        fields = ['role', 'namespace', 'path', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
+        fields = ['namespace', 'path', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
 
 class UniversalAppUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
-    role = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices)
+    role = ChoiceField(choices=Role.choices)
 
     class Meta:
         model = UniversalAppUser
         fields = ['role', 'username', 'update_time', 'create_time']
+        read_only_fields = ['username', 'update_time', 'create_time']
 
 class UniversalAppUserAddSerializer(serializers.Serializer):
     username = serializers.CharField()
-    role = ChoiceField(choices=UniversalAppUser.ApplicationUserRole.choices)
+    role = ChoiceField(choices=Role.choices)
 
     class Meta:
         fields = ['role', 'username']

@@ -137,19 +137,6 @@ class OrganizationUpdateTest(BaseTestCase):
         r = org_api.change_or_set_icon(file_path)
         self.assert_status_400(r)
 
-    def test_delete_icon(self):
-        org_api = self.create_org()
-
-        r = org_api.change_or_set_icon()
-        self.assert_status_200(r)
-
-        r = org_api.remove_icon()
-        self.assert_status_204(r)
-
-        # todo
-        # r = org_api.get_org()
-        # self.assertEqual(r.json()['icon_file'], '')
-
     def test_update_public_org_permission(self):
         api: Api = Api(UnitTestClient(), 'LarryPage', True)
         org = self.generate_org(1, 'Public')
@@ -158,16 +145,16 @@ class OrganizationUpdateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         update_org = {'description': 'My description.'}
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 
@@ -187,16 +174,16 @@ class OrganizationUpdateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         update_org = {'description': 'My description.'}
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 
@@ -216,16 +203,16 @@ class OrganizationUpdateTest(BaseTestCase):
         self.assert_status_201(r)
 
         bill: Api = Api(UnitTestClient(), 'BillGates', True)
-        api.get_org_api(path).add_member('BillGates', 'Admin')
+        api.get_org_api(path).add_member('BillGates', 'Manager')
         update_org = {'description': 'My description.'}
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_200(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Collaborator')
+        api.get_org_api(path).change_member_role('BillGates', 'Developer')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 
-        api.get_org_api(path).change_member_role('BillGates', 'Member')
+        api.get_org_api(path).change_member_role('BillGates', 'Tester')
         r = bill.get_org_api(path).update_org(update_org)
         self.assert_status_403(r)
 

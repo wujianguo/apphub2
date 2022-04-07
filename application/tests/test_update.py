@@ -189,7 +189,7 @@ class UserUniversalAppUpdateTest(BaseTestCase):
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
@@ -224,7 +224,7 @@ class UserUniversalAppUpdateTest(BaseTestCase):
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
@@ -259,7 +259,7 @@ class UserUniversalAppUpdateTest(BaseTestCase):
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
-        app_api.change_member_role('BillGates', 'Viewer')
+        app_api.change_member_role('BillGates', 'Tester')
         r = bill_app_api.update_app(update_app)
         self.assert_status_403(r)
 
