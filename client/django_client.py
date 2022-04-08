@@ -35,5 +35,7 @@ class DjangoTestClient(BaseClient):
     def delete(self, path):
         return self.client.delete(self.build_url(path), HTTP_AUTHORIZATION=self.token)
 
-    def upload_post(self, path, data):
+    def upload_post(self, path, data, token=None):
+        if token:
+            return self.client.post(self.build_url(path), data=data, format="multipart", HTTP_AUTHORIZATION='Token ' + token)
         return self.client.post(self.build_url(path), data=data, format="multipart", HTTP_AUTHORIZATION=self.token)

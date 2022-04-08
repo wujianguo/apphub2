@@ -97,3 +97,25 @@ class UniversalAppUser(models.Model):
     role = models.IntegerField(Role.choices)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
+
+class AppAPIToken(models.Model):
+    app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
+    name = models.CharField(max_length=64)
+    token = models.CharField(max_length=16, unique=True)
+    enable_upload_package = models.BooleanField(default=False)
+    enable_get_packages = models.BooleanField(default=False)
+    enable_get_releases = models.BooleanField(default=False)
+    enable_get_upgrades = models.BooleanField(default=False)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+class Integration(models.Model):
+    app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
+    name = models.CharField(max_length=64)
+    destination = models.JSONField(default=dict)
+    when_new_package = models.BooleanField(default=False)
+    when_new_release = models.BooleanField(default=False)
+    when_new_upgrade = models.BooleanField(default=False)
+    when_store_state_change = models.BooleanField(default=False)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)

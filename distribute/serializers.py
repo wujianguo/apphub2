@@ -1,5 +1,6 @@
 from django.db.models import Max
 from rest_framework import serializers
+from application.models import AppAPIToken
 from distribute.models import Package, Release, StoreApp, ReleaseStore
 from distribute.stores.base import StoreType
 from distribute.stores.store import get_store
@@ -9,17 +10,33 @@ from util.url import build_absolute_uri
 class PackageSerializer(serializers.ModelSerializer):
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
-
+    uploader = serializers.SerializerMethodField()
     def get_package_file(self, obj):
         return build_absolute_uri(obj.package_file.url)
 
     def get_icon_file(self, obj):
         return ''
 
+    def get_uploader(self, obj):
+        if obj.operator_content_type.model == 'appapitoken':
+            return {
+                'kind': 'Token',
+                'name': obj.operator_content_object.name,
+                'id': obj.operator_content_object.id
+            }
+        name = obj.operator_content_object.get_full_name()
+        if not name:
+            name = obj.operator_content_object.username
+        return {
+            'kind': 'User',
+            'name': name,
+            'username': obj.operator_content_object.username
+        }
+
     class Meta:
         model = Package
-        fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'description', 'update_time', 'create_time']
-        read_only_fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'channle']
+        fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'description', 'update_time', 'create_time']
+        read_only_fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'channle']
 
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:

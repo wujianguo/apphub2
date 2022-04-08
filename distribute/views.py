@@ -1,7 +1,5 @@
-from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.http import Http404
-from django.db.models import Q
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -12,9 +10,8 @@ from application.models import Application
 from application.permissions import *
 from util.url import get_file_extension
 
-
-def create_package(request, universal_app):
-    serializer = UploadPackageSerializer(data=request.data)
+def create_package(operator_content_object, data, universal_app):
+    serializer = UploadPackageSerializer(data=data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     file = serializer.validated_data['file']
@@ -33,6 +30,8 @@ def create_package(request, universal_app):
         app = universal_app.android
     package_id = Package.objects.filter(app__universal_app=universal_app).count() + 1
     instance = Package.objects.create(
+        operator_object_id=operator_content_object.id,
+        operator_content_object=operator_content_object,
         app=app,
         name=pkg.display_name,
         package_file=file,
@@ -51,12 +50,12 @@ def create_package(request, universal_app):
         universal_app.icon_file = icon_file
         universal_app.save()
 
-    serializer = PackageSerializer(instance, context={'request': request})
+    serializer = PackageSerializer(instance)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserAppPackageList(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly | UploadPackagePermission]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -64,12 +63,17 @@ class UserAppPackageList(APIView):
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         packages = Package.objects.filter(app__universal_app=app)
-        serializer = PackageSerializer(packages, many=True, context={'request': request})
+        serializer = PackageSerializer(packages, many=True)
         return Response(serializer.data)
 
     def post(self, request, namespace, path):
-        app, role = check_app_upload_permission(request.user, path, self.get_namespace(namespace))
-        return create_package(request, app)
+        if request.user.is_authenticated:
+            app, role = check_app_upload_permission(request.user, path, self.get_namespace(namespace))
+            return create_package(request.user, request.data, app)
+        else:
+            app = get_app(path, self.get_namespace(namespace))
+            self.check_object_permissions(request, app)
+            return create_package(request.token, request.data, app)            
 
 class OrganizationAppPackageList(UserAppPackageList):
     def get_namespace(self, path):
@@ -91,7 +95,7 @@ class UserAppPackageDetail(APIView):
     def get(self, request, namespace, path, package_id):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         package = self.get_object(app, package_id)
-        serializer = PackageSerializer(package, context={'request': request})
+        serializer = PackageSerializer(package)
         return Response(serializer.data)
 
 class OrganizationAppPackageDetail(UserAppPackageDetail):

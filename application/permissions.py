@@ -1,9 +1,9 @@
 from enum import Enum
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
-from application.models import UniversalApp, UniversalAppUser
-from organization.models import Organization, OrganizationUser
+from rest_framework.permissions import BasePermission
+from application.models import AppAPIToken, UniversalApp, UniversalAppUser
+from organization.models import OrganizationUser
 from util.visibility import VisibilityType
 from util.role import Role
 from util.choice import ChoiceField
@@ -136,6 +136,24 @@ def check_app_view_permission(user, path, namespace):
     if namespace.is_organization():
         return check_org_app_view_permission(user, path, namespace.path)
 
+def get_user_app(path, ownername):
+    try:
+        return UniversalApp.objects.get(path=path, owner__username=ownername)
+    except UniversalApp.DoesNotExist:
+        raise Http404
+
+def get_org_app(path, org_path):
+    try:
+        return UniversalApp.objects.get(path=path, org__path=org_path)
+    except UniversalApp.DoesNotExist:
+        raise Http404
+
+def get_app(path, namespace):
+    if namespace.is_user():
+        return get_user_app(path, namespace.path)
+    if namespace.is_organization():
+        return get_org_app(path, namespace.path)
+
 def check_user_app_manager_permission(user, path, ownername):
     try:
         user_app = UniversalAppUser.objects.get(app__path=path, app__owner__username=ownername, user=user)
@@ -192,3 +210,21 @@ def check_app_upload_permission(user, path, namespace):
         return check_user_app_upload_permission(user, path, namespace.path)
     if namespace.is_organization():
         return check_org_app_upload_permission(user, path, namespace.path)
+
+
+class UploadPackagePermission(BasePermission):
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            return False
+        token = request.headers.get('Authorization', None)
+        if token is None or not token.startswith('Token '):
+            return False
+        token = token.split(' ')[-1]
+        try:
+            request.token = AppAPIToken.objects.get(token=token)
+            return request.token.enable_upload_package
+        except AppAPIToken.DoesNotExist:
+            return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.token.app == obj

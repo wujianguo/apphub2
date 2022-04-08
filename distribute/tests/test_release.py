@@ -1,26 +1,9 @@
-import os, requests, shutil
 from client.api import Api
 from client.unit_test_client import UnitTestClient
-from util.tests import BaseTestCase
+from distribute.tests.test_distribute_base import DistributeBaseTest
 
 
-class UserReleaseTest(BaseTestCase):
-
-    def setUp(self):
-        if not os.path.exists('downloads'):
-            os.makedirs('downloads')
-        self.apk_path = 'downloads/android-sample.apk'
-        if not os.path.exists(self.apk_path):
-            url = 'https://raw.githubusercontent.com/bitbar/test-samples/master/apps/android/bitbar-sample-app.apk'
-            with requests.get(url, stream=True) as r:
-                with open(self.apk_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-        self.ipa_path = 'downloads/ios-sample.ipa'
-        if not os.path.exists(self.ipa_path):
-            url = 'https://raw.githubusercontent.com/bitbar/test-samples/master/apps/ios/bitbar-ios-sample.ipa'
-            with requests.get(url, stream=True) as r:
-                with open(self.ipa_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
+class UserReleaseTest(DistributeBaseTest):
 
     def create_and_get_user(self, username='LarryPage'):
         return Api(UnitTestClient(), username, True)

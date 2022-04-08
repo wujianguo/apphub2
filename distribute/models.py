@@ -1,4 +1,6 @@
 import hashlib
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.conf import settings
 from application.models import Application
@@ -26,6 +28,9 @@ def distribute_icon_path(instance, filename):
       return 'users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 class Package(models.Model):
+    operator_content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
+    operator_object_id = models.PositiveIntegerField()
+    operator_content_object = GenericForeignKey('operator_content_type', 'operator_object_id')
     package_id = models.IntegerField()
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     name = models.CharField(max_length=32, help_text="The app's name (extracted from the uploaded package).")
@@ -95,5 +100,14 @@ class ReleaseStore(models.Model):
     state = models.IntegerField(choices=State.choices)
     reason = models.JSONField(default=dict)
     operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+class DistributeOperation(models.Model):
+    operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    operation = models.JSONField(default=dict)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

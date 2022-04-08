@@ -1,31 +1,17 @@
-import os, requests, shutil
 from client.api import Api
 from client.unit_test_client import UnitTestClient
-from util.tests import BaseTestCase
+from distribute.tests.test_distribute_base import DistributeBaseTest
 
 
-class UserUploadPackageTest(BaseTestCase):
-
-    def setUp(self):
-        if not os.path.exists('downloads'):
-            os.makedirs('downloads')
-        self.apk_path = 'downloads/android-sample.apk'
-        if not os.path.exists(self.apk_path):
-            url = 'https://raw.githubusercontent.com/bitbar/test-samples/master/apps/android/bitbar-sample-app.apk'
-            with requests.get(url, stream=True) as r:
-                with open(self.apk_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-        self.ipa_path = 'downloads/ios-sample.ipa'
-        if not os.path.exists(self.ipa_path):
-            url = 'https://raw.githubusercontent.com/bitbar/test-samples/master/apps/ios/bitbar-ios-sample.ipa'
-            with requests.get(url, stream=True) as r:
-                with open(self.ipa_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
+class UserUploadPackageTest(DistributeBaseTest):
 
     def create_and_get_user(self, username='LarryPage'):
         return Api(UnitTestClient(), username, True)
 
     def create_and_get_namespace(self, api, namespace):
+        return api.get_user_api(namespace)
+
+    def get_namespace(self, api, namespace):
         return api.get_user_api(namespace)
 
     def assert_upload(self, file_path):
@@ -49,6 +35,23 @@ class UserUploadPackageTest(BaseTestCase):
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
 
+        anonymous: Api = Api(UnitTestClient())
+        anonymous_app_api = self.get_namespace(anonymous, larry.client.username).get_app_api(path)
+        r = anonymous_app_api.update_app(file_path)
+        self.assert_status_401(r)
+
+        app_api = namespace.get_app_api(app['path'])
+        token_obj = {
+            'name': 'token1',
+            'enable_upload_package': True,
+        }
+        r = app_api.create_token(token_obj)
+        self.assert_status_201(r)
+        token = r.json()['token']
+        r = anonymous_app_api.upload_package(file_path, token)
+        self.assert_status_201(r)
+
+
     def test_ipa_upload(self):
         self.assert_upload(self.ipa_path)
 
@@ -56,7 +59,7 @@ class UserUploadPackageTest(BaseTestCase):
         self.assert_upload(self.apk_path)
 
 
-class OrganizationUserUploadPackageTest(UserUploadPackageTest):
+class OrganizationUploadPackageTest(UserUploadPackageTest):
 
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
         org = self.generate_org(1, visibility=visibility)
@@ -64,3 +67,5 @@ class OrganizationUserUploadPackageTest(UserUploadPackageTest):
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
 
+    def get_namespace(self, api, namespace):
+        return api.get_org_api(namespace)

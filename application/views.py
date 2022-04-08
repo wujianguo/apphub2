@@ -1,3 +1,4 @@
+import secrets
 from django.db import transaction
 from django.http import Http404
 from django.urls import reverse
@@ -277,6 +278,78 @@ class UserUniversalAppUserDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class OrganizationUniversalAppUserDetail(UserUniversalAppUserDetail):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+
+class UserUniversalAppTokenList(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def url_name(self):
+        return 'user-app-token'
+
+    def get(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        tokens = AppAPIToken.objects.filter(app=app)
+        serializer = UniversalAppTokenSerializer(tokens, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        serializer = UniversalAppTokenSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save(app=app, token=secrets.token_hex(16))
+        response = Response(UniversalAppTokenSerializer(instance).data, status=status.HTTP_201_CREATED)
+        location = reverse(self.url_name(), args=(namespace, path, instance.id))
+        response['Location'] = build_absolute_uri(location)
+        return response
+
+class OrganizationUniversalAppTokenList(UserUniversalAppTokenList):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+    
+    def url_name(self):
+        return 'org-app-token'
+
+
+class UserUniversalAppTokenDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get_object(self, token_id):
+        try:
+            return AppAPIToken.objects.get(id=token_id)
+        except AppAPIToken.DoesNotExist:
+            raise Http404
+
+    def get(self, request, namespace, path, token_id):
+        # todo
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        token = self.get_object(token_id)
+        serializer = UniversalAppTokenSerializer(token)
+        return Response(serializer.data)
+
+    def put(self, request, namespace, path, token_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        token = self.get_object(token_id)
+        serializer = UniversalAppTokenSerializer(token, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, namespace, path, token_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        token = self.get_object(token_id)
+        token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class OrganizationUniversalAppTokenDetail(UserUniversalAppTokenDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 

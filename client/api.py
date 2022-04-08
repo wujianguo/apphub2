@@ -256,11 +256,11 @@ class Api:
         def remove_member(self, username):
             return self.client.delete(self.base_path + '/members/' + username)
 
-        def upload_package(self, file_path):
+        def upload_package(self, file_path, token=None):
             with open(file_path, 'rb') as fp:
                 data = {'file': fp}
                 url = self.base_path + '/packages'
-                return self.client.upload_post(url, data=data)
+                return self.client.upload_post(url, data=data, token=token)
 
         def get_package_list(self, page=1, per_page=10):
             query = {
@@ -280,6 +280,21 @@ class Api:
 
         def get_one_release(self, release_id):
             return self.client.get(self.base_path + '/releases/' + str(release_id))
+
+        def create_token(self, data):
+            return self.client.post(self.base_path + '/tokens', data)
+
+        def get_token_list(self):
+            return self.client.get(self.base_path + '/tokens')
+
+        def get_one_token(self, token_id):
+            return self.client.get(self.base_path + '/tokens/' + str(token_id))
+
+        def update_token(self, token_id, data):
+            return self.client.put(self.base_path + '/tokens/' + str(token_id), data)
+
+        def remove_token(self, token_id):
+            return self.client.delete(self.base_path + '/tokens/' + str(token_id))
 
         def create_vivo_store(self, auth_data):
             return self.client.post(self.base_path + '/stores/vivo', auth_data)

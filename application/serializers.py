@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.core.files import File
-from application.models import Application, UniversalApp, UniversalAppUser
+from application.models import Application, UniversalApp, UniversalAppUser, AppAPIToken
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.image import generate_icon_image
@@ -168,3 +168,9 @@ class UniversalAppUserAddSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['role', 'username']
+
+class UniversalAppTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppAPIToken
+        fields = ['id', 'name', 'token', 'enable_upload_package', 'enable_get_packages', 'enable_get_releases', 'enable_get_upgrades', 'update_time', 'create_time']
+        read_only_fields = ['id', 'token', 'update_time', 'create_time']
