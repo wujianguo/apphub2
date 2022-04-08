@@ -294,7 +294,7 @@ class OrganizationUniversalAppList(APIView):
             except OrganizationUser.DoesNotExist:
                 try:
                     allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-                    org = Organization.objects.get(org__path=org_path, visibility__in=allow_visibility)
+                    org = Organization.objects.get(path=org_path, visibility__in=allow_visibility)
                     apps = UniversalApp.objects.filter(org=org, visibility__in=allow_visibility).order_by('create_time')[(page - 1) * per_page: page * per_page]
                 except Organization.DoesNotExist:
                     pass

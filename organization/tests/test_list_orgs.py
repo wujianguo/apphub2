@@ -4,16 +4,6 @@ from util.tests import BaseTestCase
 
 class OrganizationListTest(BaseTestCase):
 
-    def create_org(self):
-        api: Api = Api(UnitTestClient(), 'LarryPage', True)
-        org = self.google_org()
-
-        r = api.get_user_api().create_org(org)
-        self.assert_status_201(r)
-
-        path = org['path']
-        return api.get_org_api(path)
-
     def test_empty_orgs(self):
         api: Api = Api(UnitTestClient(), 'LarryPage', True)
         r = api.get_user_api().get_visible_org_list()

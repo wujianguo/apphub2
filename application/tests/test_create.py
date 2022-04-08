@@ -8,16 +8,7 @@ class UserUniversalAppCreateTest(BaseTestCase):
     def create_and_get_user(self, username='LarryPage', auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
-    def kind(self):
-        return 'User'
-
-    def suffix_namespace(self, namespace):
-        return namespace
-
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
-        return api.get_user_api(namespace)
-
-    def get_namespace(self, api, namespace):
         return api.get_user_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
@@ -185,12 +176,6 @@ class UserUniversalAppCreate2Test(BaseTestCase):
     def create_and_get_user(self, username='LarryPage', auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
-    def kind(self):
-        return 'User'
-
-    def suffix_namespace(self, namespace):
-        return namespace
-
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
         return api.get_user_api(namespace)
 
@@ -199,9 +184,6 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         org['path'] = namespace
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
-
-    def get_namespace(self, api, namespace):
-        return api.get_user_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
         return api.get_user_api(namespace).get_app_api(app_path)
@@ -362,20 +344,11 @@ class UserUniversalAppCreate2Test(BaseTestCase):
 
 class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
 
-    def kind(self):
-        return 'Organization'
-
-    def suffix_namespace(self, namespace):
-        return namespace + '_org'
-
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
         org = self.generate_org(1, visibility=visibility)
         org['path'] = namespace
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
-
-    def get_namespace(self, api, namespace):
-        api.get_org_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
         return api.get_org_api(namespace).get_app_api(app_path)

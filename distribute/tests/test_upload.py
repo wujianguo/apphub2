@@ -25,22 +25,19 @@ class UserUploadPackageTest(BaseTestCase):
     def create_and_get_user(self, username='LarryPage'):
         return Api(UnitTestClient(), username, True)
 
-    def kind(self):
-        return 'User'
-
     def create_and_get_namespace(self, api, namespace):
         return api.get_user_api(namespace)
 
-    def test_ipa_upload(self):
+    def assert_upload(self, file_path):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         app = self.chrome_app()
-        app["enable_os"] = ["iOS"]
+        app["enable_os"] = ["iOS", "Android"]
         namespace.create_app(app)
         path = app['path']
 
         app_api = namespace.get_app_api(path)
-        r = app_api.upload_package(self.ipa_path)
+        r = app_api.upload_package(file_path)
         self.assert_status_201(r)
         package_id = r.json()['package_id']
 
@@ -51,46 +48,19 @@ class UserUploadPackageTest(BaseTestCase):
         r = app_api.get_one_package(package_id)
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
+
+    def test_ipa_upload(self):
+        self.assert_upload(self.ipa_path)
 
     def test_apk_upload(self):
-        larry = self.create_and_get_user()
-        namespace = self.create_and_get_namespace(larry, larry.client.username)
-        app = self.chrome_app()
-        app["enable_os"] = ["Android"]
-        namespace.create_app(app)
-        path = app['path']
-
-        app_api = namespace.get_app_api(path)
-        r = app_api.upload_package(self.apk_path)
-        self.assert_status_201(r)
-        package_id = r.json()['package_id']
-
-        r2 = app_api.get_package_list()
-        self.assert_status_200(r2)
-        self.assert_list_length(r2, 1)
-        self.assertDictEqual(r.json(), r2.json()[0])
-        r = app_api.get_one_package(package_id)
-        self.assert_status_200(r)
-        self.assertDictEqual(r.json(), r2.json()[0])
+        self.assert_upload(self.apk_path)
 
 
 class OrganizationUserUploadPackageTest(UserUploadPackageTest):
-
-    def kind(self):
-        return 'Organization'
-
-    def suffix_namespace(self, namespace):
-        return namespace + '_org'
 
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
         org = self.generate_org(1, visibility=visibility)
         org['path'] = namespace
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
-
-    def get_namespace(self, api, namespace):
-        api.get_org_api(namespace)
-
-    def get_app_api(self, api, namespace, app_path):
-        return api.get_org_api(namespace).get_app_api(app_path)
 

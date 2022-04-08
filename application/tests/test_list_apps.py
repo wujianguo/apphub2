@@ -4,12 +4,6 @@ from util.tests import BaseTestCase
 
 class UserUniversalAppListTest(BaseTestCase):
 
-    def kind(self):
-        return 'User'
-
-    def suffix_namespace(self, namespace):
-        return namespace
-
     def create_and_get_user(self, username='LarryPage', auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
@@ -18,9 +12,6 @@ class UserUniversalAppListTest(BaseTestCase):
 
     def get_namespace(self, api, namespace):
         return api.get_user_api(namespace)
-
-    def get_app_api(self, api, namespace, app_path):
-        return api.get_user_api(namespace).get_app_api(app_path)
 
     def test_empty_orgs(self):
         larry = self.create_and_get_user()
@@ -131,12 +122,6 @@ class UserUniversalAppListTest(BaseTestCase):
 
 class OrganizationUniversalAppListTest(UserUniversalAppListTest):
 
-    def kind(self):
-        return 'Organization'
-
-    def suffix_namespace(self, namespace):
-        return namespace + '_org'
-
     def create_and_get_namespace(self, api, namespace, visibility='Public'):
         org = self.generate_org(1, visibility=visibility)
         org['path'] = namespace
@@ -145,9 +130,6 @@ class OrganizationUniversalAppListTest(UserUniversalAppListTest):
 
     def get_namespace(self, api, namespace):
         return api.get_org_api(namespace)
-
-    def get_app_api(self, api, namespace, app_path):
-        return api.get_org_api(namespace).get_app_api(app_path)
 
 class UserVisibleAppListTest(BaseTestCase):
 
@@ -163,13 +145,8 @@ class UserVisibleAppListTest(BaseTestCase):
         api.get_user_api().create_org(org)
         return api.get_org_api(org['path'])
 
-    def get_namespace(self, api, namespace):
-        return api.get_user_api(namespace)
-
-    def get_app_api(self, api, namespace, app_path):
-        return api.get_user_api(namespace).get_app_api(app_path)
-
     def test_visible_apps(self):
+        # todo
         larry = self.create_and_get_user()
         bill = self.create_and_get_user('BillGates')
         mark = self.create_and_get_user('Mark')
@@ -260,7 +237,23 @@ class UserVisibleAppListTest(BaseTestCase):
         app24 = self.generate_app(24, visibility='Private')
         bill_org3.create_app(app24)
 
-        larry.get_user_api().get_visible_app_list()
+        larry.get_org_api('larry_org1').get_app_list()
+        larry.get_org_api('larry_org2').get_app_list()
+        larry.get_org_api('larry_org3').get_app_list()
+
+        larry.get_org_api('bill_org1').get_app_list()
+        larry.get_org_api('bill_org2').get_app_list()
+        larry.get_org_api('bill_org3').get_app_list()
+
+
+        anonymous.get_org_api('larry_org1').get_app_list()
+        anonymous.get_org_api('larry_org2').get_app_list()
+        anonymous.get_org_api('larry_org3').get_app_list()
+
+        anonymous.get_org_api('bill_org1').get_app_list()
+        anonymous.get_org_api('bill_org2').get_app_list()
+        anonymous.get_org_api('bill_org3').get_app_list()
+
         bill.get_user_api().get_visible_app_list()
         mark.get_user_api().get_visible_app_list()
         anonymous.get_user_api().get_visible_app_list()

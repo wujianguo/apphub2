@@ -91,17 +91,14 @@ def check_user_app_view_permission(user, path, ownername):
             return user_app.app, UserRoleKind.application(user_app.role)
         except UniversalAppUser.DoesNotExist:
             pass
+    if user.is_authenticated:
+        allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
+    else:
+        allow_visibility = [VisibilityType.Public]
     try:
-        if user.is_authenticated:
-            allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
-        else:
-            allow_visibility = [VisibilityType.Public]
-        try:
-            app = UniversalApp.objects.get(path=path, owner__username=ownername, visibility__in=allow_visibility)
-            return app, None
-        except UniversalApp.DoesNotExist:
-            raise Http404
-    except Organization.DoesNotExist:
+        app = UniversalApp.objects.get(path=path, owner__username=ownername, visibility__in=allow_visibility)
+        return app, None
+    except UniversalApp.DoesNotExist:
         raise Http404
 
 def check_org_app_view_permission(user, path, org_path):
