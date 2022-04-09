@@ -46,10 +46,6 @@ def create_package(operator_content_object, data, universal_app):
     if not app.icon_file and icon_file is not None:
         app.icon_file = icon_file
         app.save()
-    if not universal_app.icon_file and icon_file is not None:
-        universal_app.icon_file = icon_file
-        universal_app.save()
-
     serializer = PackageSerializer(instance)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 

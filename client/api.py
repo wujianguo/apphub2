@@ -296,6 +296,21 @@ class Api:
         def remove_token(self, token_id):
             return self.client.delete(self.base_path + '/tokens/' + str(token_id))
 
+        def create_webhook(self, data):
+            return self.client.post(self.base_path + '/webhooks', data)
+
+        def get_webhook_list(self):
+            return self.client.get(self.base_path + '/webhooks')
+
+        def get_one_webhook(self, webhook_id):
+            return self.client.get(self.base_path + '/webhooks/' + str(webhook_id))
+
+        def update_webhook(self, webhook_id, data):
+            return self.client.put(self.base_path + '/webhooks/' + str(webhook_id), data)
+
+        def remove_webhook(self, webhook_id):
+            return self.client.delete(self.base_path + '/webhooks/' + str(webhook_id))
+
         def create_vivo_store(self, auth_data):
             return self.client.post(self.base_path + '/stores/vivo', auth_data)
 

@@ -1,6 +1,5 @@
 from django.db.models import Max
 from rest_framework import serializers
-from application.models import AppAPIToken
 from distribute.models import Package, Release, StoreApp, ReleaseStore
 from distribute.stores.base import StoreType
 from distribute.stores.store import get_store

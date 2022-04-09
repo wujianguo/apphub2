@@ -4,14 +4,6 @@ from util.tests import BaseTestCase
 
 class OrganizationMemberTest(BaseTestCase):
 
-    def create_org(self):
-        api: Api = Api(UnitTestClient(), 'LarryPage', True)
-        org = self.google_org()
-        r = api.get_user_api().create_org(org)
-        self.assert_status_201(r)
-        path = org['path']
-        return api.get_org_api(path)
-
     def test_add_member(self):
         api: Api = Api(UnitTestClient(), 'LarryPage', True)
         org = self.google_org('Private')

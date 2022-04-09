@@ -175,6 +175,7 @@ class UserUniversalAppIcon(APIView):
         serializer = UniversalAppIconSerializer(app, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        app.icon_file.delete()
         serializer.save()
         location = reverse(self.url_name(), args=(namespace, path))
         data = {
@@ -350,6 +351,78 @@ class UserUniversalAppTokenDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class OrganizationUniversalAppTokenDetail(UserUniversalAppTokenDetail):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+
+class UserUniversalAppWebhookList(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def url_name(self):
+        return 'user-app-webhook'
+
+    def get(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        webhooks = Webhook.objects.filter(app=app)
+        serializer = WebhookSerializer(webhooks, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, namespace, path):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        serializer = WebhookSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save(app=app)
+        response = Response(WebhookSerializer(instance).data, status=status.HTTP_201_CREATED)
+        location = reverse(self.url_name(), args=(namespace, path, instance.id))
+        response['Location'] = build_absolute_uri(location)
+        return response
+
+class OrganizationUniversalAppWebhookList(UserUniversalAppWebhookList):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
+    
+    def url_name(self):
+        return 'org-app-webhook'
+
+
+class UserUniversalAppWebhookDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get_object(self, webhook_id):
+        try:
+            return Webhook.objects.get(id=webhook_id)
+        except Webhook.DoesNotExist:
+            raise Http404
+
+    def get(self, request, namespace, path, webhook_id):
+        # todo
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        webhook = self.get_object(webhook_id)
+        serializer = WebhookSerializer(webhook)
+        return Response(serializer.data)
+
+    def put(self, request, namespace, path, webhook_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        webhook = self.get_object(webhook_id)
+        serializer = WebhookSerializer(webhook, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, namespace, path, webhook_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        webhook = self.get_object(webhook_id)
+        webhook.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class OrganizationUniversalAppWebhookDetail(UserUniversalAppWebhookDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 

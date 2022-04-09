@@ -186,6 +186,7 @@ class UserAvatar(APIView):
         serializer = UserAvatarSerializer(request.user, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        request.user.avatar.delete()
         instance = serializer.save()
         data = {
             'avatar': build_absolute_uri(instance.avatar.url)

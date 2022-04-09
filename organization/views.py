@@ -179,6 +179,7 @@ class OrganizationIcon(APIView):
         serializer = OrganizationIconSerializer(user_org.org, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user_org.org.icon_file.delete()
         serializer.save()
         location = reverse('org-icon', args=(path,))
         data = {

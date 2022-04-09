@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.core.files import File
-from application.models import Application, UniversalApp, UniversalAppUser, AppAPIToken
+from application.models import Application, UniversalApp, UniversalAppUser, AppAPIToken, Webhook
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.image import generate_icon_image
@@ -174,3 +174,9 @@ class UniversalAppTokenSerializer(serializers.ModelSerializer):
         model = AppAPIToken
         fields = ['id', 'name', 'token', 'enable_upload_package', 'enable_get_packages', 'enable_get_releases', 'enable_get_upgrades', 'update_time', 'create_time']
         read_only_fields = ['id', 'token', 'update_time', 'create_time']
+
+class WebhookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Webhook
+        fields = ['id', 'name', 'url', 'auth_data', 'template', 'when_new_package', 'when_new_release', 'when_new_upgrade', 'when_store_state_change', 'update_time', 'create_time']
+        read_only_fields = ['id', 'update_time', 'create_time']

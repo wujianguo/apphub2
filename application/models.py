@@ -109,11 +109,13 @@ class AppAPIToken(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
-class Integration(models.Model):
+class Webhook(models.Model):
     app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
-    destination = models.JSONField(default=dict)
-    when_new_package = models.BooleanField(default=False)
+    url = models.URLField()
+    auth_data = models.JSONField(default=dict)
+    template = models.JSONField(default=dict)
+    when_new_package = models.BooleanField(default=True)
     when_new_release = models.BooleanField(default=False)
     when_new_upgrade = models.BooleanField(default=False)
     when_store_state_change = models.BooleanField(default=False)
