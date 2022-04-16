@@ -1,7 +1,12 @@
 from django.conf import settings
 
 def build_absolute_uri(path):
-    return settings.EXTERNAL_URL + path
+    if path.startswith('https://') or path.startswith('http://'):
+        return path.replace('/public/', '/')
+    if path.startswith('/'):
+        return settings.EXTERNAL_URL + path[1:]
+    else:
+        return settings.EXTERNAL_URL + path
 
 def get_file_extension(filename, default='png'):
     ext = default

@@ -6,7 +6,7 @@ from util.url import get_file_extension
 
 def avatar_directory_path(instance, filename):
     name = '{0}.{1}'.format(instance.username, get_file_extension(filename))
-    return 'users/{0}/avatar/{1}'.format(instance.id, name)
+    return 'public/users/{0}/avatar/{1}'.format(instance.id, name)
 
 class User(AbstractUser):
     email_verified = models.BooleanField(default=False)

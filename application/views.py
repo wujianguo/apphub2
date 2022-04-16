@@ -16,6 +16,7 @@ from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
 from util.role import Role
+from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
@@ -45,11 +46,15 @@ class VisibleUniversalAppList(APIView):
             app_data.extend(org_app_data)
             app_data.extend(user_apps_data)
             # app_data.sort(key=lambda x: x['create_time'])
-            return Response(app_data[(page - 1) * per_page: page * per_page])
+            headers = {'x-total-count': len(app_data)}
+            return Response(app_data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
-            apps = UniversalApp.objects.filter(visibility=VisibilityType.Public).order_by('create_time')[(page - 1) * per_page: page * per_page]
+            query = UniversalApp.objects.filter(visibility=VisibilityType.Public)
+            count = query.count()
+            apps = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = UniversalAppSerializer(apps, many=True)
-            return Response(serializer.data)
+            headers = {'x-total-count': count}
+            return Response(serializer.data, headers=headers)
 
 class UserUniversalAppList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -70,11 +75,15 @@ class UserUniversalAppList(APIView):
             user_apps_data = UserUniversalAppSerializer(user_apps, many=True).data
             data.extend(user_apps_data)
             data.sort(key=lambda x: x['create_time'])
-            return Response(data[(page - 1) * per_page: page * per_page])
+            headers = {'x-total-count': len(data)}
+            return Response(data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
-            apps = UniversalApp.objects.filter(visibility=VisibilityType.Public, owner__username=username).order_by('create_time')[(page - 1) * per_page: page * per_page]
+            query = UniversalApp.objects.filter(visibility=VisibilityType.Public, owner__username=username)
+            count = query.count()
+            apps = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = UniversalAppSerializer(apps, many=True)
-            return Response(serializer.data)
+            headers = {'x-total-count': count}
+            return Response(serializer.data, headers=headers)
 
 
 class AuthenticatedUserApplicationList(APIView):
@@ -156,7 +165,7 @@ class OrganizationUniversalAppDetail(UserUniversalAppDetail):
         return UniversalApp.objects.filter(path=path, org__path=namespace).exists()
 
 class UserUniversalAppIcon(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -164,20 +173,14 @@ class UserUniversalAppIcon(APIView):
     def url_name(self):
         return 'user-app-icon'
 
-    def get(self, request, namespace, path):
-        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        response = Response()
-        response['X-Accel-Redirect'] = app.icon_file.url
-        return response
-
     def post(self, request, namespace, path):
         app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         serializer = UniversalAppIconSerializer(app, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         app.icon_file.delete()
-        serializer.save()
-        location = reverse(self.url_name(), args=(namespace, path))
+        instance = serializer.save()
+        location = reverse(self.url_name(), args=(namespace, path, os.path.basename(instance.icon_file.name)))
         data = {
             'icon_file': build_absolute_uri(location)
         }
@@ -189,9 +192,23 @@ class UserUniversalAppIcon(APIView):
 class OrganizationUniversalAppIcon(UserUniversalAppIcon):
     def get_namespace(self, path):
         return Namespace.organization(path)
-    
+
     def url_name(self):
         return 'org-app-icon'
+
+class UserUniversalAppIconDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_namespace(self, path):
+        return Namespace.user(path)
+
+    def get(self, request, namespace, path, icon_name):
+        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        return internal_file_response(app.icon_file, icon_name)
+
+class OrganizationUniversalAppIconDetail(UserUniversalAppIconDetail):
+    def get_namespace(self, path):
+        return Namespace.organization(path)
 
 
 class UserUniversalAppUserList(APIView):
@@ -452,7 +469,8 @@ class OrganizationUniversalAppList(APIView):
                 pass
 
         serializer = UniversalAppSerializer(apps, many=True)
-        return Response(serializer.data)
+        headers = {'x-total-count': len(apps)}
+        return Response(serializer.data, headers=headers)
 
     @transaction.atomic
     def post(self, request, org_path):

@@ -7,25 +7,25 @@ from application.models import Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
 from util.url import get_file_extension
-
+from util.storage import make_file_public
 
 def distribute_package_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
     name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename, 'zip')
     if universal_app.org is not None:
-      return 'orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
+      return 'internal/orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
-      return 'users/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
+      return 'internal/users/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 def distribute_icon_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
     name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename)
     if instance.app.universal_app.org is not None:
-      return 'orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
+      return 'internal/orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
-      return 'users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
+      return 'internal/users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 class Package(models.Model):
     operator_content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
@@ -56,6 +56,9 @@ class Package(models.Model):
                 md5.update(chunk)
             self.fingerprint = md5.hexdigest()
         super(Package, self).save(*args, **kwargs)
+    
+    def make_public(self):
+        make_file_public(self, self.package_file)
 
 class Release(models.Model):
     app = models.ForeignKey(Application, on_delete=models.CASCADE)

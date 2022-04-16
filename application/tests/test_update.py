@@ -45,8 +45,10 @@ class UserUniversalAppUpdateTest(BaseTestCase):
 
         old_value['path'] = new_path
         del old_value['update_time']
+        del old_value['icon_file']
         new_value = r.json()
         del new_value['update_time']
+        del new_value['icon_file']
         self.assertDictEqual(new_value, old_value)
 
     def test_modify_invalid_path(self):
@@ -157,14 +159,14 @@ class UserUniversalAppUpdateTest(BaseTestCase):
         self.assert_status_201(r)
         app_api = namespace.get_app_api(app['path'])
 
-        r1 = app_api.get_icon()
+        r1 = app_api.get_icon(r.json()['icon_file'].split('/')[-1])
         self.assert_status_200(r1)
 
         r = app_api.change_or_set_icon()
         self.assert_status_200(r)
         self.assertNotEqual(r.json()['icon_file'], '')
 
-        r1 = app_api.get_icon()
+        r1 = app_api.get_icon(r.json()['icon_file'].split('/')[-1])
         self.assert_status_200(r)
 
         r2 = app_api.change_or_set_icon()

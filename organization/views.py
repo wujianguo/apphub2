@@ -89,11 +89,15 @@ class OrganizationList(APIView):
             data = OrganizationSerializer(orgs, many=True).data
             user_orgs_data = UserOrganizationSerializer(user_orgs, many=True).data
             data.extend(user_orgs_data)
-            return Response(data[(page - 1) * per_page: page * per_page])
+            headers = {'x-total-count': len(data)}
+            return Response(data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
-            orgs = Organization.objects.filter(visibility=VisibilityType.Public).order_by('create_time')[(page - 1) * per_page: page * per_page]
+            query = Organization.objects.filter(visibility=VisibilityType.Public)
+            count = query.count()
+            orgs = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = OrganizationSerializer(orgs, many=True)
-            return Response(serializer.data)
+            headers = {'x-total-count': count}
+            return Response(serializer.data, headers=headers)
 
     @transaction.atomic
     def post(self, request):

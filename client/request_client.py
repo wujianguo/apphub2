@@ -3,7 +3,7 @@ from client.client import BaseClient
 
 
 class RequestsClient(BaseClient):
-    def __init__(self, base_url=''):
+    def __init__(self, base_url='https://appcenter.libms.top/debug/api/'):
         self.base_url = base_url
         self.token = ''
         self.username = ''
@@ -36,5 +36,10 @@ class RequestsClient(BaseClient):
     def delete(self, path):
         return requests.delete(self.build_url(path), headers=self.headers())
 
-    def upload_post(self, path, data):
+    def upload_post(self, path, data, token=None):
+        if token:
+            headers = {
+                'Authorization': 'Token ' + token
+            }
+            return requests.post(self.build_url(path), files=data, headers=headers)
         return requests.post(self.build_url(path), files=data, headers=self.headers())

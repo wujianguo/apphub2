@@ -86,6 +86,7 @@ class ReleaseCreateSerializer(serializers.Serializer):
         package_id = validated_data['package_id']
         try:
             package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
+            package.make_public()
         except Package.DoesNotExist:
             raise serializers.ValidationError('package_id is not found.')
 
