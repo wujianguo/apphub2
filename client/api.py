@@ -89,6 +89,9 @@ class Api:
             }
             return self.client.post('/user/email/verify', payload)
 
+        def get_user(self, username):
+            return self.client.get('/user/' + username)
+
         def create_org(self, org):
             return self.client.post('/orgs', org)
 

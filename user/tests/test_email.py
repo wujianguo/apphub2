@@ -32,10 +32,10 @@ class UserEmailTest(BaseTestCase):
         r = api.get_user_api().register(user)
         self.assertEqual(r.json()['email_verified'], False)
         r = api.get_user_api().request_verify_email()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[0].body)
         r = api.get_user_api().verify_email(code)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         r = api.get_user_api().me()
         self.assertEqual(r.json()['email_verified'], True)
 
@@ -59,13 +59,13 @@ class UserEmailTest(BaseTestCase):
         r = api.get_user_api().request_verify_email()
         code = str(mail.outbox[2].body)
         r = api.get_user_api().verify_email(code)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
 
     def test_expired(self):
         api = self.register('BillGates@example.com')
         with self.settings(CODE_EXPIRE_SECONDS=1):
             r = api.get_user_api().request_verify_email()
-            self.assert_status_200(r)
+            self.assert_status_204(r)
             code = str(mail.outbox[0].body)
             time.sleep(5)
             r = api.get_user_api().verify_email(code)

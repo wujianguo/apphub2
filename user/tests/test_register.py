@@ -15,8 +15,12 @@ class UserRegisterTest(BaseTestCase):
         self.assert_partial_dict_equal2(user, r.json(), assert_keys)
 
         api2: Api = Api(UnitTestClient())
-        r = api2.get_user_api().login({'username': user['username'], 'password': user['password']})
+        r = api2.get_user_api().login({'account': user['username'], 'password': user['password']})
         self.assert_status_200(r)
+        self.assert_partial_dict_equal2(user, r.json(), assert_keys)
+
+        anonymous: Api = Api(UnitTestClient())
+        r = anonymous.get_user_api().get_user(user['username'])
         self.assert_partial_dict_equal2(user, r.json(), assert_keys)
 
     def assert_register_failure_400(self, user):
@@ -70,6 +74,9 @@ class UserRegisterTest(BaseTestCase):
                 'password': 'BillGates@password'
             }, {
                 'username': 'BillGates*',
+                'password': 'BillGates@password'
+            }, {
+                'username': 'BillGates@example',
                 'password': 'BillGates@password'
             }
         ]

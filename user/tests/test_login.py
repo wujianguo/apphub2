@@ -26,8 +26,7 @@ class UserLoginTest(BaseTestCase):
             'password': 'BillGates@password'
         }
         self.register(user)
-        self.assert_login_success(user)
-        self.assert_login_success({'username': 'BillGates', 'password': 'BillGates@password'})
+        self.assert_login_success({'account': 'BillGates', 'password': 'BillGates@password'})
 
     def test_login_failure(self):
         user = {
@@ -37,13 +36,13 @@ class UserLoginTest(BaseTestCase):
         self.register(user)
         users = [
             {
-                'username': 'BillGates',
+                'account': 'BillGates',
                 'password': 'BillGates@passwordxx'
             }, {
-                'username': 'BillGates3',
+                'account': 'BillGates3',
                 'password': 'BillGates@password'
             }, {
-                'username': 'BillGates',
+                'account': 'BillGates',
             }, {
                 'password': 'BillGates@password'
             }, {
@@ -61,7 +60,7 @@ class UserLoginTest(BaseTestCase):
         }
         self.register(user)
         api: Api = Api(UnitTestClient())
-        r = api.get_user_api().login(user)
+        r = api.get_user_api().login({'account': 'BillGates', 'password': 'BillGates@password'})
 
         r = api.get_user_api().logout()
         self.assert_status_204(r)

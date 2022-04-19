@@ -9,6 +9,7 @@ def avatar_directory_path(instance, filename):
     return 'public/users/{0}/avatar/{1}'.format(instance.id, name)
 
 class User(AbstractUser):
+    username = models.SlugField(max_length=150, unique=True)
     email_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to=avatar_directory_path)
 

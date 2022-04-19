@@ -27,9 +27,9 @@ class UserPasswordTest(BaseTestCase):
         new_password = 'new_password'
         api = self.register(password=old_password)
         r = api.get_user_api().change_password(old_password, new_password)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         api2: Api = Api(UnitTestClient())
-        r = api2.get_user_api().login({'username': 'BillGates', 'password': new_password})
+        r = api2.get_user_api().login({'account': 'BillGates', 'password': new_password})
         self.assert_status_200(r)
 
     def test_change_password_failure(self):
@@ -45,30 +45,30 @@ class UserPasswordTest(BaseTestCase):
         email = 'BillGates@example.com'
         api = self.register(email=email)
         r = api.get_user_api().request_verify_email()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[0].body)
         r = api.get_user_api().verify_email(code)
         api2: Api = Api(UnitTestClient())
         r = api2.get_user_api().request_reset_password(email)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[1].body)
         new_password = 'new_password'
         r = api2.get_user_api().reset_password(code, new_password)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         api3: Api = Api(UnitTestClient())
-        r = api3.get_user_api().login({'username': 'BillGates', 'password': new_password})
+        r = api3.get_user_api().login({'account': 'BillGates', 'password': new_password})
         self.assert_status_200(r)
 
     def test_reset_password_invalid_code(self):
         email = 'BillGates@example.com'
         api = self.register(email=email)
         r = api.get_user_api().request_verify_email()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[0].body)
         r = api.get_user_api().verify_email(code)
         api2: Api = Api(UnitTestClient())
         r = api2.get_user_api().request_reset_password(email)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
 
         new_password = 'new_password'
         r = api2.get_user_api().reset_password(code, new_password)
@@ -93,12 +93,12 @@ class UserPasswordTest(BaseTestCase):
         email = 'BillGates@example.com'
         api = self.register(email=email)
         r = api.get_user_api().request_verify_email()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[0].body)
         r = api.get_user_api().verify_email(code)
         api2: Api = Api(UnitTestClient())
         r = api2.get_user_api().request_reset_password(email)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[1].body)
         new_password = 'new_password'
         with self.settings(CODE_EXPIRE_SECONDS=1):
@@ -110,18 +110,18 @@ class UserPasswordTest(BaseTestCase):
         email = 'BillGates@example.com'
         api = self.register(email=email)
         r = api.get_user_api().request_verify_email()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[0].body)
         r = api.get_user_api().verify_email(code)
         api2: Api = Api(UnitTestClient())
         r = api2.get_user_api().request_reset_password(email)
         r = api2.get_user_api().request_reset_password(email)
         r = api2.get_user_api().request_reset_password(email)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         code = str(mail.outbox[3].body)
         new_password = 'new_password'
         r = api2.get_user_api().reset_password(code, new_password)
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         api3: Api = Api(UnitTestClient())
-        r = api3.get_user_api().login({'username': 'BillGates', 'password': new_password})
+        r = api3.get_user_api().login({'account': 'BillGates', 'password': new_password})
         self.assert_status_200(r)

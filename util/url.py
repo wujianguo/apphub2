@@ -4,9 +4,9 @@ def build_absolute_uri(path):
     if path.startswith('https://') or path.startswith('http://'):
         return path.replace('/public/', '/')
     if path.startswith('/'):
-        return settings.EXTERNAL_URL + path[1:]
-    else:
         return settings.EXTERNAL_URL + path
+    else:
+        return settings.EXTERNAL_URL + '/' + path
 
 def get_file_extension(filename, default='png'):
     ext = default

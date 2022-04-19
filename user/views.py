@@ -1,4 +1,5 @@
 import datetime
+from django.http import Http404
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -78,7 +79,7 @@ def request_verify_email(request):
     email_code = EmailCode.objects.create(email=request.user.email, type=EmailCode.EmailCodeType.VerifyEmail)
     message = str(email_code.code)
     send_mail('verify your email', message, None, [request.user.email])
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -101,7 +102,7 @@ def verify_email(request):
 
     request.user.email_verified = True
     request.user.save()
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -117,7 +118,7 @@ def request_reset_password(request):
     email_code = EmailCode.objects.create(email=email, type=EmailCode.EmailCodeType.ResetPassword)
     message = str(email_code.code)
     send_mail('reset password', message, None, [email])
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -142,9 +143,10 @@ def reset_password(request):
         user = UserModel.objects.get(email=email, email_verified=True)
     except UserModel.DoesNotExist:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    user.auth_token.delete()
     user.set_password(serializer.validated_data['password'])
     user.save()
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -155,9 +157,10 @@ def change_password(request):
     user = authenticate(username=request.user.username, password=serializer.validated_data['password'])
     if not user:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    request.user.auth_token.delete()
     request.user.set_password(serializer.validated_data['new_password'])
     request.user.save()
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeUser(APIView):
@@ -195,3 +198,13 @@ class UserAvatar(APIView):
         response = Response(data)
         response['Location'] = build_absolute_uri(instance.avatar.url)
         return response
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def user_info(request, username):
+    try:
+        user = UserModel.objects.get(username=username)
+    except UserModel.DoesNotExist:
+        raise Http404
+    serializer = UserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)

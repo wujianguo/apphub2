@@ -33,10 +33,12 @@ if EXTERNAL_URL:
 else:
     ALLOWED_HOSTS = []
 
+EXTERNAL_API_URL = EXTERNAL_URL + '/api'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'documentation.apps.DocumentationConfig',
     'user.apps.UserConfig',
     'organization.apps.OrganizationConfig',
     'application.apps.ApplicationConfig',
@@ -147,10 +149,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 STATIC_ROOT = os.environ.get('APPHUB_SETTINGS_STATIC_ROOT', default='var/static/')
-STATIC_URL = EXTERNAL_URL + 'static/'
+STATIC_URL = EXTERNAL_URL + '/static/'
 
 MEDIA_ROOT = os.environ.get('APPHUB_SETTINGS_MEDIA_ROOT', default='var/media')
-MEDIA_URL = EXTERNAL_URL + 'media/'
+MEDIA_URL = EXTERNAL_URL + '/media/'
 
 
 # Default primary key field type

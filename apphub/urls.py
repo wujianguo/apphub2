@@ -19,6 +19,7 @@ from user.views import MeUser
 from organization.views import OrganizationList
 from application.views import *
 from distribute.views import *
+from documentation.views import *
 
 urlpatterns = [
     path('api/user', MeUser.as_view()),
@@ -57,4 +58,5 @@ urlpatterns = [
     path('api/users/<namespace>/apps/<path>/releases', UserAppReleaseList.as_view()),
     path('api/users/<namespace>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),
     path('api/users/<namespace>/apps/<path>/stores/vivo', UserStoreAppVivo.as_view()),
+    path('api/docs/swagger.json', SwaggerJsonView.as_view())
 ]

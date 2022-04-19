@@ -33,16 +33,21 @@ class UserAvatarSerializer(serializers.ModelSerializer):
         fields = ['avatar']
 
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    account = serializers.CharField()
     password = serializers.CharField()
 
     class Meta:
-        fields = ['username', 'email', 'password']
+        fields = ['account', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate(self, attrs):
-        username = attrs.get('username', '')
-        email = attrs.get('email', '')
+        account = attrs.get('account', '')
+        if account.find('@') != -1:
+            username = ''
+            email = account
+        else:
+            username = account
+            email = ''
         password = attrs.get('password')
         user = authenticate(username=username, password=password, email=email)
         if user is None:
