@@ -219,15 +219,17 @@
           }
         },
         "responses": {
-          "200": {
+          "204": {
             "description": "my avatar",
-            "content": {
-              "application/json": {
+            "headers": {
+              "Location": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
-                }
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "my avatar"
               }
-            }
+            }        
           },
           "400": {
             "description": "invalid input, object invalid"
@@ -441,6 +443,2147 @@
           }
         }
       }
+    },
+    "/orgs": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "organization"
+        ],
+        "summary": "List organizations",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "organization list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds an organization to the system",
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the organization"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/orgs/{path}": {
+      "get": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an organization",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update organization",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove organization",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/orgs/{path}/icons": {
+      "post": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Set the organization icon",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "icon_file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "organization icon",
+            "headers": [
+              {
+                "location": {
+                  "schema": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "description": "organization icon"
+                }
+              }
+            ]
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/orgs/{path}/members": {
+      "get": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get organization members",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "organization member list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationUserResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds an user to the organization",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the organization member"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/orgs/{path}/members/{username}": {
+      "get": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the organization member",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the organization member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the organization member",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the organization member",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/user/apps": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "List applications for the authenticated user",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds an application to the user",
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the application"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "List the user's applications",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/icons": {
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Set the application icon",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "icon_file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "application icon",
+            "headers": [
+              {
+                "location": {
+                  "schema": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "description": "application icon"
+                }
+              }
+            ]
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/members": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get application members",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application member list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationUserResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds an user to the application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the application member"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/members/{member_name}": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the application member",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "member_name",
+            "in": "path",
+            "description": "The member's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the application member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the application member",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "member_name",
+            "in": "path",
+            "description": "The member's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationnUserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the application member",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "member_name",
+            "in": "path",
+            "description": "The member's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/tokens": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "List the application's tokens",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application token list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationTokenResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds a token to the application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the application token"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/tokens/{token_id}": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the application token",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token_id",
+            "in": "path",
+            "description": "The token's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the application token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the application token",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token_id",
+            "in": "path",
+            "description": "The token's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the application token",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token_id",
+            "in": "path",
+            "description": "The token's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/webhooks": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "List the application's webhooks",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application webhook list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationWebhookResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Adds a webhook to the application",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the application webhook"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationWebhookResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/webhooks/{webhook_id}": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the application webhook",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "description": "The webhook's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the application webhook",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationWebhookResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the application webhook",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "description": "The webhook's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationWebhookResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "application"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the application webhook",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "description": "The webhook's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -579,6 +2722,597 @@
           "email": {
             "type": "string",
             "format": "email"
+          }
+        }
+      },
+      "OrganizationRequest": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "slug"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "Private",
+              "Internal",
+              "Public"
+            ]
+          }
+        }
+      },
+      "OrganizationResponse": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "slug"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "Private",
+              "Internal",
+              "Public"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-02-08T05:57:18.184933Z"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-02-08T05:57:18.184933Z"
+          }
+        }
+      },
+      "OrganizationUserRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationUserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
+          }
+        }
+      },
+      "OrganizationUserResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
+          },
+          "username": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApplicationRequest": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "slug"
+          },
+          "name": {
+            "type": "string"
+          },
+          "install_slug": {
+            "type": "string",
+            "format": "slug"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "Private",
+              "Internal",
+              "Public"
+            ]
+          },
+          "enable_os": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Android",
+                "iOS",
+                "macOS",
+                "tvOS",
+                "Windows",
+                "Linux"
+              ]
+            }
+          }
+        }
+      },
+      "ApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "slug"
+          },
+          "username": {
+            "$ref": "#/components/schemas/username"
+          },
+          "role_kind": {
+            "$ref": "#/components/schemas/RoleKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "install_slug": {
+            "type": "string",
+            "format": "slug"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "Private",
+              "Internal",
+              "Public"
+            ]
+          },
+          "enable_os": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Android",
+                "iOS",
+                "macOS",
+                "tvOS",
+                "Windows",
+                "Linux"
+              ]
+            }
+          },
+          "icon_file": {
+            "type": "stirng",
+            "format": "url"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-02-08T05:57:18.184933Z"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-02-08T05:57:18.184933Z"
+          }
+        }
+      },
+      "ApplicationUserResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
+          },
+          "username": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApplicationTokenRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enable_upload_package": {
+            "type": "boolean"
+          },
+          "enable_get_packages": {
+            "type": "boolean"
+          },
+          "enable_get_releases": {
+            "type": "boolean"
+          },
+          "enable_get_upgrades": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApplicationTokenResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "enable_upload_package": {
+            "type": "boolean"
+          },
+          "enable_get_packages": {
+            "type": "boolean"
+          },
+          "enable_get_releases": {
+            "type": "boolean"
+          },
+          "enable_get_upgrades": {
+            "type": "boolean"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApplicationWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "url"
+          },
+          "auth_data": {
+            "type": "object"
+          },
+          "template": {
+            "type": "object"
+          },
+          "when_new_package": {
+            "type": "boolean"
+          },
+          "when_new_release": {
+            "type": "boolean"
+          },
+          "when_new_upgrade": {
+            "type": "boolean"
+          },
+          "when_store_state_change": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApplicationWebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "url"
+          },
+          "auth_data": {
+            "type": "object"
+          },
+          "template": {
+            "type": "object"
+          },
+          "when_new_package": {
+            "type": "boolean"
+          },
+          "when_new_release": {
+            "type": "boolean"
+          },
+          "when_new_upgrade": {
+            "type": "boolean"
+          },
+          "when_store_state_change": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Package": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "format": "slug"
+          },
+          "description": {
+            "type": "string"
+          },
+          "package_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "icon_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "short_version": {
+            "type": "string"
+          },
+          "internal_build": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          },
+          "bundle_identifier": {
+            "type": "string"
+          },
+          "commit_id": {
+            "type": "string"
+          },
+          "min_os": {
+            "type": "string"
+          },
+          "channle": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Release": {
+        "type": "object",
+        "properties": {
+          "release_id": {
+            "type": "number"
+          },
+          "release_notes": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "format": "slug"
+          },
+          "description": {
+            "type": "string"
+          },
+          "package_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "icon_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "short_version": {
+            "type": "string"
+          },
+          "internal_build": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "bundle_identifier": {
+            "type": "string"
+          },
+          "commit_id": {
+            "type": "string"
+          },
+          "min_os": {
+            "type": "string"
+          },
+          "channle": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Upgrade": {
+        "type": "object",
+        "properties": {
+          "upgrade_id": {
+            "type": "number"
+          },
+          "release_notes": {
+            "type": "string"
+          },
+          "target_version": {
+            "type": "string"
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "format": "slug"
+          },
+          "description": {
+            "type": "string"
+          },
+          "package_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "icon_file": {
+            "type": "string",
+            "format": "url"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "short_version": {
+            "type": "string"
+          },
+          "internal_build": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "bundle_identifier": {
+            "type": "string"
+          },
+          "commit_id": {
+            "type": "string"
+          },
+          "min_os": {
+            "type": "string"
+          },
+          "channle": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "username": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "slug"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "User",
+              "Organization"
+            ]
+          }
+        }
+      },
+      "RoleKind": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "Application",
+              "Organization"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Owner",
+              "Manager",
+              "Developer",
+              "Tester"
+            ]
           }
         }
       },

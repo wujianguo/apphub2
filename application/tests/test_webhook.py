@@ -47,6 +47,13 @@ class UserAppWebhookTest(BaseTestCase):
         self.assert_status_200(r)
         self.assertEqual(r.json()['when_new_package'], update_webhook['when_new_package'])
 
+        anonymous: Api = Api(UnitTestClient())
+        anonymous_app_api = self.get_namespace(anonymous, larry.client.username).get_app_api(app['path'])
+        r = anonymous_app_api.get_webhook_list()
+        self.assert_status_401(r)
+        r = anonymous_app_api.get_one_webhook(webhook_id)
+        self.assert_status_401(r)
+
         r = app_api.remove_webhook(webhook_id)
         self.assert_status_204(r)
 

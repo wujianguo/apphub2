@@ -191,11 +191,8 @@ class UserAvatar(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         request.user.avatar.delete()
         instance = serializer.save()
-        data = {
-            'avatar': build_absolute_uri(instance.avatar.url)
-        }
         # todo response no content
-        response = Response(data)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
         response['Location'] = build_absolute_uri(instance.avatar.url)
         return response
 

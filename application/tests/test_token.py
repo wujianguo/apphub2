@@ -48,6 +48,13 @@ class UserAppTokenTest(BaseTestCase):
         self.assert_status_200(r)
         self.assertEqual(r.json()['enable_get_releases'], update_token['enable_get_releases'])
 
+        anonymous: Api = Api(UnitTestClient())
+        anonymous_app_api = self.get_namespace(anonymous, larry.client.username).get_app_api(app['path'])
+        r = anonymous_app_api.get_token_list()
+        self.assert_status_401(r)
+        r = anonymous_app_api.get_one_token(token_id)
+        self.assert_status_401(r)
+
         r = app_api.remove_token(token_id)
         self.assert_status_204(r)
 

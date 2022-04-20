@@ -1,20 +1,26 @@
+import os.path
 from rest_framework import serializers
-# from rest_framework.validators import UniqueValidator
+from django.urls import reverse
 from organization.models import Organization, OrganizationUser
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.role import Role
+from util.url import build_absolute_uri
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    # validators=[UniqueValidator(queryset=Organization.objects.all())])
     path = serializers.SlugField(max_length=32, help_text='The path of the organization.')
     name = serializers.CharField(max_length=128, help_text='A short text describing the organization')
     description = serializers.CharField(max_length=1024, required=False, help_text='A short text describing the organization')
     visibility = ChoiceField(VisibilityType.choices)
+    icon_file = serializers.SerializerMethodField()
+
+    def get_icon_file(self, obj):
+        location = reverse('org-icon', args=(obj.path, os.path.basename(obj.icon_file.name)))
+        return build_absolute_uri(location)
 
     class Meta:
         model = Organization
-        fields = ['path', 'name', 'description', 'visibility', 'update_time', 'create_time']
+        fields = ['path', 'name', 'description', 'visibility', 'icon_file', 'update_time', 'create_time']
 
 class OrganizationIconSerializer(serializers.ModelSerializer):
 
@@ -30,10 +36,15 @@ class UserOrganizationSerializer(serializers.ModelSerializer):
     role = ChoiceField(choices=Role.choices, required=False)
     update_time = serializers.ReadOnlyField(source='org.update_time')
     create_time = serializers.ReadOnlyField(source='org.create_time')
+    icon_file = serializers.SerializerMethodField()
+
+    def get_icon_file(self, obj):
+        location = reverse('org-icon', args=(obj.org.path, os.path.basename(obj.org.icon_file.name)))
+        return build_absolute_uri(location)
 
     class Meta:
         model = OrganizationUser
-        fields = ['role', 'path', 'name', 'description', 'visibility', 'update_time', 'create_time']
+        fields = ['role', 'path', 'name', 'description', 'visibility', 'icon_file', 'update_time', 'create_time']
 
 class OrganizationUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

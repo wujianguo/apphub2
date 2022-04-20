@@ -17,6 +17,7 @@ from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
 from util.image import generate_icon_image
+from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
@@ -37,7 +38,7 @@ def check_org_view_permission(path, user):
     org_user = OrganizationUser.objects.filter(viewer_query(user, path))
     if not org_user.exists():
         raise Http404
-    return org_user.first()
+    return org_user.first().org
 
 def check_org_manager_permission(path, user):
     try:
@@ -89,14 +90,14 @@ class OrganizationList(APIView):
             data = OrganizationSerializer(orgs, many=True).data
             user_orgs_data = UserOrganizationSerializer(user_orgs, many=True).data
             data.extend(user_orgs_data)
-            headers = {'x-total-count': len(data)}
+            headers = {'X-Total-Count': len(data)}
             return Response(data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
             query = Organization.objects.filter(visibility=VisibilityType.Public)
             count = query.count()
             orgs = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = OrganizationSerializer(orgs, many=True)
-            headers = {'x-total-count': count}
+            headers = {'X-Total-Count': count}
             return Response(serializer.data, headers=headers)
 
     @transaction.atomic
@@ -119,7 +120,7 @@ class OrganizationList(APIView):
         data['role'] = ChoiceField(choices=Role.choices).to_representation(org_user.role)
         response = Response(data, status=status.HTTP_201_CREATED)
         location = reverse('org-detail', args=(path,))
-        response['Location'] = request.build_absolute_uri(location)
+        response['Location'] = build_absolute_uri(location)
         return response
 
 class OrganizationDetail(APIView):
@@ -170,29 +171,25 @@ class OrganizationDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class OrganizationIcon(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, path):
-        user_org = check_org_view_permission(path, request.user)
-        response = Response()
-        response['X-Accel-Redirect'] = user_org.org.icon_file.url
-        return response
-
     def post(self, request, path):
         user_org = check_org_manager_permission(path, request.user)
         serializer = OrganizationIconSerializer(user_org.org, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user_org.org.icon_file.delete()
-        serializer.save()
-        location = reverse('org-icon', args=(path,))
-        data = {
-            'icon_file': build_absolute_uri(location)
-        }
+        instance = serializer.save()
+        location = reverse('org-icon', args=(path, os.path.basename(instance.icon_file.name)))
         # todo response no content
-        response = Response(data)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
         response['Location'] = build_absolute_uri(location)
         return response
+
+class OrganizationIconDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, path, icon_name):
+        org = check_org_view_permission(path, request.user)
+        return internal_file_response(org.icon_file, icon_name)
 
 class OrganizationUserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

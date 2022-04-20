@@ -60,4 +60,4 @@ class UserUpdateTest(BaseTestCase):
     def test_update_avatar(self):
         api = self.register()
         r = api.get_user_api().update_avatar()
-        self.assert_status_200(r)
+        self.assert_status_204(r)

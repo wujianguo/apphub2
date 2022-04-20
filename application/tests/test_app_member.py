@@ -121,7 +121,7 @@ class UserUniversalAppMember2Test(BaseTestCase):
         self.assert_status_200(r)
 
         r = bill_app_api.change_or_set_icon()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
         r = bill_app_api.change_member_role('LarryPage', 'Developer')
         self.assert_status_403(r)
 

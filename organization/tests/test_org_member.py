@@ -84,7 +84,7 @@ class OrganizationMemberTest(BaseTestCase):
         self.assert_status_200(r)
 
         r = bill.get_org_api(path).change_or_set_icon()
-        self.assert_status_200(r)
+        self.assert_status_204(r)
 
     def test_remove_member(self):
         api: Api = Api(UnitTestClient(), 'LarryPage', True)

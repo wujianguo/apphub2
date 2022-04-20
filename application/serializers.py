@@ -42,7 +42,7 @@ class UniversalAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniversalApp
-        fields = ['namespace', 'path', 'name', 'description', 'visibility', 'enable_os', 'icon_file', 'update_time', 'create_time']
+        fields = ['namespace', 'path', 'name', 'install_slug', 'description', 'visibility', 'enable_os', 'icon_file', 'update_time', 'create_time']
 
 class UniversalAppCreateSerializer(serializers.Serializer):
     path = serializers.SlugField(max_length=32, help_text='The path of the universal application.')
@@ -138,6 +138,7 @@ class UniversalAppIconSerializer(serializers.ModelSerializer):
 class UserUniversalAppSerializer(serializers.ModelSerializer):
     path = serializers.StringRelatedField(source='app.path')
     name = serializers.StringRelatedField(source='app.name')
+    install_slug = serializers.StringRelatedField(source='app.install_slug')
     description = serializers.StringRelatedField(source='app.description')
     visibility = ChoiceField(VisibilityType.choices, source='app.visibility')
     update_time = serializers.ReadOnlyField(source='app.update_time')
@@ -162,7 +163,7 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniversalAppUser
-        fields = ['namespace', 'path', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
+        fields = ['namespace', 'path', 'install_slug', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
 
 class UniversalAppUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

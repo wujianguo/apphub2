@@ -41,8 +41,10 @@ class OrganizationUpdateTest(BaseTestCase):
 
         old_value['path'] = new_path
         del old_value['update_time']
+        del old_value['icon_file']
         new_value = r.json()
         del new_value['update_time']
+        del new_value['icon_file']
         self.assertDictEqual(new_value, old_value)
 
     def test_modify_invalid_path(self):
@@ -116,18 +118,19 @@ class OrganizationUpdateTest(BaseTestCase):
     def test_upload_icon(self):
         org_api = self.create_org()
 
-        r1 = org_api.get_icon()
-        self.assert_status_200(r1)
+        # r1 = org_api.get_icon()
+        # self.assert_status_200(r1)
 
         r = org_api.change_or_set_icon()
-        self.assert_status_200(r)
-        self.assertNotEqual(r.json()['icon_file'], '')
+        self.assert_status_204(r)
 
-        r1 = org_api.get_icon()
-        self.assert_status_200(r)
+        self.assertNotEqual(r.headers['Location'], '')
+
+        # r1 = org_api.get_icon()
+        # self.assert_status_200(r)
 
         r2 = org_api.change_or_set_icon()
-        self.assert_status_200(r2)
+        self.assert_status_204(r2)
         # self.assertNotEqual(r2.json()['icon_file'], r.json()['icon_file'])
         # self.assertNotEqual(r2.json()['icon_file'], '')
 

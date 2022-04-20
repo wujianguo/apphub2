@@ -160,13 +160,13 @@ class Api:
 
             with open(file_path, 'rb') as fp:
                 data = {'icon_file': fp}
-                return self.client.upload_post(self.base_path + '/icon', data=data)
+                return self.client.upload_post(self.base_path + '/icons', data=data)
 
-        def get_icon(self):
-            return self.client.get(self.base_path + '/icon')
+        # def get_icon(self):
+        #     return self.client.get(self.base_path + '/icon')
 
-        def remove_icon(self):
-            return self.client.delete(self.base_path + '/icon')
+        # def remove_icon(self):
+        #     return self.client.delete(self.base_path + '/icon')
 
         def add_member(self, username, role):
             collaborator = {
@@ -231,11 +231,11 @@ class Api:
                 data = {'icon_file': fp}
                 return self.client.upload_post(self.base_path + '/icons', data=data)
 
-        def get_icon(self, name):
-            return self.client.get(self.base_path + '/icons/' + name)
+        # def get_icon(self, name):
+        #     return self.client.get(self.base_path + '/icons/' + name)
 
-        def remove_icon(self):
-            return self.client.delete(self.base_path + '/icon')
+        # def remove_icon(self):
+        #     return self.client.delete(self.base_path + '/icon')
 
         def add_member(self, username, role):
             collaborator = {

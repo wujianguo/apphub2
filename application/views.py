@@ -46,14 +46,14 @@ class VisibleUniversalAppList(APIView):
             app_data.extend(org_app_data)
             app_data.extend(user_apps_data)
             # app_data.sort(key=lambda x: x['create_time'])
-            headers = {'x-total-count': len(app_data)}
+            headers = {'X-Total-Count': len(app_data)}
             return Response(app_data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
             query = UniversalApp.objects.filter(visibility=VisibilityType.Public)
             count = query.count()
             apps = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = UniversalAppSerializer(apps, many=True)
-            headers = {'x-total-count': count}
+            headers = {'X-Total-Count': count}
             return Response(serializer.data, headers=headers)
 
 class UserUniversalAppList(APIView):
@@ -75,14 +75,14 @@ class UserUniversalAppList(APIView):
             user_apps_data = UserUniversalAppSerializer(user_apps, many=True).data
             data.extend(user_apps_data)
             data.sort(key=lambda x: x['create_time'])
-            headers = {'x-total-count': len(data)}
+            headers = {'X-Total-Count': len(data)}
             return Response(data[(page - 1) * per_page: page * per_page], headers=headers)
         else:
             query = UniversalApp.objects.filter(visibility=VisibilityType.Public, owner__username=username)
             count = query.count()
             apps = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
             serializer = UniversalAppSerializer(apps, many=True)
-            headers = {'x-total-count': count}
+            headers = {'X-Total-Count': count}
             return Response(serializer.data, headers=headers)
 
 
@@ -108,7 +108,7 @@ class AuthenticatedUserApplicationList(APIView):
         data = UniversalAppSerializer(instance).data
         data['role'] = UserRoleKind.application(app_user.role).response()
         response = Response(data, status=status.HTTP_201_CREATED)
-        location = reverse('user-app-detail', args=(path, request.user.username))
+        location = reverse('user-app-detail', args=(request.user.username, path))
         response['Location'] = build_absolute_uri(location)
         return response
 
@@ -181,11 +181,8 @@ class UserUniversalAppIcon(APIView):
         app.icon_file.delete()
         instance = serializer.save()
         location = reverse(self.url_name(), args=(namespace, path, os.path.basename(instance.icon_file.name)))
-        data = {
-            'icon_file': build_absolute_uri(location)
-        }
         # todo response no content
-        response = Response(data)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
         response['Location'] = build_absolute_uri(location)
         return response
 
@@ -300,7 +297,7 @@ class OrganizationUniversalAppUserDetail(UserUniversalAppUserDetail):
         return Namespace.organization(path)
 
 class UserUniversalAppTokenList(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -334,7 +331,7 @@ class OrganizationUniversalAppTokenList(UserUniversalAppTokenList):
 
 
 class UserUniversalAppTokenDetail(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -372,7 +369,7 @@ class OrganizationUniversalAppTokenDetail(UserUniversalAppTokenDetail):
         return Namespace.organization(path)
 
 class UserUniversalAppWebhookList(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -406,7 +403,7 @@ class OrganizationUniversalAppWebhookList(UserUniversalAppWebhookList):
 
 
 class UserUniversalAppWebhookDetail(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_namespace(self, path):
         return Namespace.user(path)
@@ -469,7 +466,7 @@ class OrganizationUniversalAppList(APIView):
                 pass
 
         serializer = UniversalAppSerializer(apps, many=True)
-        headers = {'x-total-count': len(apps)}
+        headers = {'X-Total-Count': len(apps)}
         return Response(serializer.data, headers=headers)
 
     @transaction.atomic
