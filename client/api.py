@@ -90,7 +90,7 @@ class Api:
             return self.client.post('/user/email/verify', payload)
 
         def get_user(self, username):
-            return self.client.get('/user/' + username)
+            return self.client.get('/users/' + username)
 
         def create_org(self, org):
             return self.client.post('/orgs', org)
@@ -262,7 +262,7 @@ class Api:
         def upload_package(self, file_path, token=None):
             with open(file_path, 'rb') as fp:
                 data = {'file': fp}
-                url = self.base_path + '/packages'
+                url = self.base_path + '/packages/upload_via_file'
                 return self.client.upload_post(url, data=data, token=token)
 
         def get_package_list(self, page=1, per_page=10):

@@ -15,6 +15,7 @@ from user.serializers import *
 from util.reserved import reserved_names
 from util.image import generate_icon_image
 from util.url import build_absolute_uri
+from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
@@ -205,3 +206,12 @@ def user_info(request, username):
         raise Http404
     serializer = UserSerializer(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def user_avatar(request, username, name):
+    try:
+        user = UserModel.objects.get(username=username)
+    except UserModel.DoesNotExist:
+        raise Http404
+    return internal_file_response(user.avatar, name)

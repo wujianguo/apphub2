@@ -15,7 +15,7 @@ Including another URLconf
 """
 
 from django.urls import include, path
-from user.views import MeUser
+from user.views import MeUser, user_avatar, user_info
 from organization.views import OrganizationList
 from application.views import *
 from distribute.views import *
@@ -25,6 +25,8 @@ urlpatterns = [
     path('api/user', MeUser.as_view()),
     path('api/user/apps', AuthenticatedUserApplicationList.as_view()),
     path('api/user/', include('user.urls')),
+    path('api/users/<username>', user_info),
+    path('api/users/<username>/avatar/<name>', user_avatar, name='user-avatar'),
     path('api/orgs', OrganizationList.as_view()),
     path('api/orgs/<org_path>/apps', OrganizationUniversalAppList.as_view()),
     path('api/orgs/<namespace>/apps/<path>', OrganizationUniversalAppDetail.as_view(), name='org-app-detail'),
@@ -37,7 +39,10 @@ urlpatterns = [
     path('api/orgs/<namespace>/apps/<path>/webhooks', OrganizationUniversalAppWebhookList.as_view()),
     path('api/orgs/<namespace>/apps/<path>/webhooks/<webhook_id>', OrganizationUniversalAppWebhookDetail.as_view(), name='org-app-webhook'),
     path('api/orgs/<namespace>/apps/<path>/packages', OrganizationAppPackageList.as_view()),
-    path('api/orgs/<namespace>/apps/<path>/packages/<int:package_id>', OrganizationAppPackageDetail.as_view()),
+    path('api/orgs/<namespace>/apps/<path>/packages/upload_via_file', OrganizationAppPackageUpload.as_view()),
+    path('api/orgs/<namespace>/apps/<path>/packages/<int:package_id>', OrganizationAppPackageDetail.as_view(), name='org-app-package'),
+    path('api/orgs/<namespace>/apps/<path>/packages/<int:package_id>/icons/<name>', OrganizationAppPackageIcon.as_view(), name='org-app-package-icon'),
+    path('api/orgs/<namespace>/apps/<path>/packages/<int:package_id>/<name>', OrganizationAppPackageFile.as_view(), name='org-app-package-file'),
     path('api/orgs/<namespace>/apps/<path>/releases', OrganizationAppReleaseList.as_view()),
     path('api/orgs/<namespace>/apps/<path>/releases/<int:release_id>', OrganizationAppReleaseDetail.as_view()),
     path('api/orgs/<namespace>/apps/<path>/stores/vivo', OrganizationStoreAppVivo.as_view()),
@@ -54,7 +59,10 @@ urlpatterns = [
     path('api/users/<namespace>/apps/<path>/webhooks', UserUniversalAppWebhookList.as_view()),
     path('api/users/<namespace>/apps/<path>/webhooks/<webhook_id>', UserUniversalAppWebhookDetail.as_view(), name='user-app-webhook'),
     path('api/users/<namespace>/apps/<path>/packages', UserAppPackageList.as_view()),
-    path('api/users/<namespace>/apps/<path>/packages/<int:package_id>', UserAppPackageDetail.as_view()),
+    path('api/users/<namespace>/apps/<path>/packages/upload_via_file', UserAppPackageUpload.as_view()),
+    path('api/users/<namespace>/apps/<path>/packages/<int:package_id>', UserAppPackageDetail.as_view(), name='user-app-package'),
+    path('api/users/<namespace>/apps/<path>/packages/<int:package_id>/icons/<name>', UserAppPackageIcon.as_view(), name='user-app-package-icon'),
+    path('api/users/<namespace>/apps/<path>/packages/<int:package_id>/<name>', UserAppPackageFile.as_view(), name='user-app-package-file'),
     path('api/users/<namespace>/apps/<path>/releases', UserAppReleaseList.as_view()),
     path('api/users/<namespace>/apps/<path>/releases/<int:release_id>', UserAppReleaseDetail.as_view()),
     path('api/users/<namespace>/apps/<path>/stores/vivo', UserStoreAppVivo.as_view()),

@@ -1,3 +1,5 @@
+import os.path
+from django.urls import reverse
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -9,7 +11,8 @@ class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
 
     def get_avatar(self, obj):
-        return build_absolute_uri(obj.avatar.url)
+        location = reverse('user-avatar', args=(obj.username, os.path.basename(obj.avatar.name)))
+        return build_absolute_uri(location)
 
     class Meta:
         model = UserModel

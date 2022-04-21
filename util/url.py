@@ -2,7 +2,7 @@ from django.conf import settings
 
 def build_absolute_uri(path):
     if path.startswith('https://') or path.startswith('http://'):
-        return path.replace('/public/', '/')
+        return path
     if path.startswith('/'):
         return settings.EXTERNAL_URL + path
     else:

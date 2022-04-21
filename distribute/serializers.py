@@ -1,20 +1,38 @@
+from email.policy import default
+import os.path
 from django.db.models import Max
+from django.urls import reverse
 from rest_framework import serializers
 from distribute.models import Package, Release, StoreApp, ReleaseStore
 from distribute.stores.base import StoreType
 from distribute.stores.store import get_store
+from application.models import Application
 from util.choice import ChoiceField
 from util.url import build_absolute_uri
 
 class PackageSerializer(serializers.ModelSerializer):
+    os = serializers.SerializerMethodField()
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
     uploader = serializers.SerializerMethodField()
+    def get_os(self, obj):
+        return ChoiceField(choices=Application.OperatingSystem.choices).to_representation(obj.app.os)
+
     def get_package_file(self, obj):
-        return build_absolute_uri(obj.package_file.url)
+        url_name = self.context['package_file_url_name']
+        namespace = self.context['namespace']
+        path = self.context['path']
+        location = reverse(url_name, args=(namespace, path, obj.package_id, os.path.basename(obj.package_file.name)))
+        return build_absolute_uri(location)
 
     def get_icon_file(self, obj):
-        return ''
+        if not obj.icon_file:
+            return ''
+        url_name = self.context['icon_file_url_name']
+        namespace = self.context['namespace']
+        path = self.context['path']
+        location = reverse(url_name, args=(namespace, path, obj.package_id, os.path.basename(obj.icon_file.name)))
+        return build_absolute_uri(location)
 
     def get_uploader(self, obj):
         if obj.operator_content_type.model == 'appapitoken':
@@ -34,8 +52,8 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'description', 'update_time', 'create_time']
-        read_only_fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'channle']
+        fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'os', 'channle', 'description', 'update_time', 'create_time']
+        read_only_fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'os', 'channle']
 
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,8 +62,10 @@ class PackageUpdateSerializer(serializers.ModelSerializer):
 
 class UploadPackageSerializer(serializers.Serializer):
     file = serializers.FileField()
+    description = serializers.CharField(default='')
+    commit_id = serializers.CharField(max_length=16, default='')
     class Meta:
-        fields = ['file']
+        fields = ['file', 'description', 'commit_id']
 
 class ReleaseSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='package.name')

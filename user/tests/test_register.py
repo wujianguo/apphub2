@@ -21,6 +21,7 @@ class UserRegisterTest(BaseTestCase):
 
         anonymous: Api = Api(UnitTestClient())
         r = anonymous.get_user_api().get_user(user['username'])
+        self.assert_status_200(r)
         self.assert_partial_dict_equal2(user, r.json(), assert_keys)
 
     def assert_register_failure_400(self, user):
