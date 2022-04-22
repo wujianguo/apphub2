@@ -71,7 +71,7 @@ class Package(models.Model):
         initial_path = settings.MEDIA_ROOT + '/' + file.name
         new_name = self.get_public_file_path(file, install_slug)
         new_path = settings.MEDIA_ROOT + '/' + new_name
-        make_directory(os.path.dirname(new_path), exist_ok=True)
+        make_directory(os.path.dirname(new_path))
         copy_file(initial_path, new_path)
 
     def get_public_file_path(self, file, install_slug):

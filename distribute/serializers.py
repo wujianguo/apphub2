@@ -186,7 +186,7 @@ class ReleaseCreateSerializer(serializers.Serializer):
 
         if enabled is None and package is not None:
             if instance.enabled:
-                instance.package.make_internal()
+                instance.package.make_internal(install_slug)
                 package.make_public(install_slug)
             instance.package = package
             instance.save()

@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework.response import Response
 
 def make_directory(path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(path, exist_ok=True)
 
 def remove_directory(path):
     shutil.rmtree(settings.MEDIA_ROOT + '/' + path)
