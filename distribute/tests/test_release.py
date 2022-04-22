@@ -36,7 +36,7 @@ class UserReleaseTest(DistributeBaseTest):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         app = self.chrome_app()
-        app["enable_os"] = ["iOS"]
+        app["enable_os"] = ["iOS", "Android"]
         namespace.create_app(app)
         path = app['path']
 
@@ -59,6 +59,29 @@ class UserReleaseTest(DistributeBaseTest):
         r = app_api.get_one_release(release_id)
         self.assert_status_200(r)
         self.assertDictEqual(r.json(), r2.json()[0])
+        # self.assert_release_file_permission(release_id)
+
+        r = app_api.create_release(release)
+        self.assert_status_400(r)
+
+        r = app_api.update_release(release_id, release)
+        self.assert_status_400(r)
+
+        r = app_api.update_release(release_id, {'enabled': False})
+        self.assert_status_200(r)
+        # self.assert_release_file_permission(release_id)
+        r = app_api.update_release(release_id, {'enabled': True})
+        # self.assert_release_file_permission(release_id)
+
+        r = app_api.upload_package(self.apk_path)
+        self.assert_status_201(r)
+        package_id2 = r.json()['package_id']
+        r = app_api.update_release(release_id, {'package_id': package_id2})
+        self.assert_status_200(r)
+
+        r = app_api.update_release(release_id, {'enabled': False})
+        self.assert_status_200(r)
+
 
     def test_vivo_store(self):
         app = self.chrome_app()

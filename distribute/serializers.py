@@ -83,10 +83,20 @@ class ReleaseSerializer(serializers.ModelSerializer):
     icon_file = serializers.SerializerMethodField()
 
     def get_package_file(self, obj):
-        return build_absolute_uri(obj.package.package_file.url)
+        url_name = self.context['package_file_url_name']
+        namespace = self.context['namespace']
+        path = self.context['path']
+        location = reverse(url_name, args=(namespace, path, obj.package.package_id, os.path.basename(obj.package.package_file.name)))
+        return build_absolute_uri(location)
 
     def get_icon_file(self, obj):
-        return ''
+        if not obj.package.icon_file:
+            return ''
+        url_name = self.context['icon_file_url_name']
+        namespace = self.context['namespace']
+        path = self.context['path']
+        location = reverse(url_name, args=(namespace, path, obj.package.package_id, os.path.basename(obj.package.icon_file.name)))
+        return build_absolute_uri(location)
 
     class Meta:
         model = Release
@@ -101,14 +111,30 @@ class ReleaseCreateSerializer(serializers.Serializer):
     class Meta:
         fields = ['release_notes', 'enabled', 'package_id']
 
+    def get_and_check_package(self, package_id, universal_app):
+        try:
+            package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
+            try:
+                Release.objects.get(package=package)
+                raise serializers.ValidationError('the package already released.')
+            except Release.DoesNotExist:
+                pass
+            try:
+                Release.objects.get(package__version=package.version, package__short_version=package.short_version)
+                raise serializers.ValidationError('the version already released.')
+            except Release.DoesNotExist:
+                pass
+        except Package.DoesNotExist:
+            raise serializers.ValidationError('package_id is not found.')
+        return package
+
     def create(self, validated_data):
         universal_app = validated_data['universal_app']
         package_id = validated_data['package_id']
-        try:
-            package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
+        package = self.get_and_check_package(package_id, universal_app)
+        # todo: check version
+        if validated_data['enabled']:
             package.make_public()
-        except Package.DoesNotExist:
-            raise serializers.ValidationError('package_id is not found.')
 
         release_id = Release.objects.filter(app__universal_app=universal_app).count() + 1
         app = package.app
@@ -120,6 +146,51 @@ class ReleaseCreateSerializer(serializers.Serializer):
             enabled=validated_data['enabled']
         )
         return instance
+
+    def update(self, instance, validated_data):
+        universal_app = validated_data['universal_app']
+        release_notes = validated_data.get('validated_data', None)
+        enabled = validated_data.get('enabled', None)
+        package_id = validated_data.get('package_id', None)
+        if enabled == instance.enabled:
+            enabled = None
+
+        package = None
+        if package_id is not None:
+            package = self.get_and_check_package(package_id, universal_app)
+            # todo: check version
+
+        if release_notes is not None:
+            instance.release_notes = release_notes
+
+        if enabled is None and package is not None:
+            if instance.enabled:
+                instance.package.make_internal()
+                package.make_public()
+            instance.package = package
+            instance.save()
+            return instance
+
+        if enabled is not None and package is None:
+            if enabled:
+                instance.package.make_public()
+            else:
+                instance.package.make_internal()
+            instance.enabled = enabled
+            instance.save()
+            return instance
+
+        if enabled is not None and enabled != instance.enabled and package is not None:
+            if instance.enabled:
+                instance.package.make_internal()
+            if enabled:
+                package.make_public()
+            instance.enabled = enabled
+            instance.package = package
+
+        instance.save()
+        return instance
+
 
 class StoreAppSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()

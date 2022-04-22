@@ -284,6 +284,12 @@ class Api:
         def get_one_release(self, release_id):
             return self.client.get(self.base_path + '/releases/' + str(release_id))
 
+        def update_release(self, release_id, data):
+            return self.client.put(self.base_path + '/releases/' + str(release_id), data)
+
+        def remove_release(self, release_id):
+            return self.client.delete(self.base_path + '/releases/' + str(release_id))
+
         def create_token(self, data):
             return self.client.post(self.base_path + '/tokens', data)
 

@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from uritemplate import partial
 from distribute.serializers import *
 from distribute.package_parser import parser
 from distribute.models import Release
@@ -80,10 +81,13 @@ class UserAppPackageUpload(APIView):
             icon_file.name = 'icon.png'
         else:
             icon_file = None
+        app = None
         if pkg.os == Application.OperatingSystem.iOS:
             app = universal_app.iOS
         elif pkg.os == Application.OperatingSystem.Android:
             app = universal_app.android
+        if app is None:
+            raise serializers.ValidationError('OS not supported.')
         package_id = Package.objects.filter(app__universal_app=universal_app).count() + 1
         instance = Package.objects.create(
             operator_object_id=operator_content_object.id,
@@ -174,7 +178,7 @@ class UserAppPackageDetail(APIView):
     def put(self, request, namespace, path, package_id):
         app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         package = self.get_object(app, package_id)
-        serializer = PackageUpdateSerializer(package, data= request.data)
+        serializer = PackageUpdateSerializer(package, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save()
@@ -253,10 +257,22 @@ class UserAppReleaseList(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
+    def package_file_url_name(self):
+        return 'user-app-package-file'
+
+    def icon_file_url_name(self):
+        return 'user-app-package-icon'
+
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         releases = Release.objects.filter(app__universal_app=app)
-        serializer = ReleaseSerializer(releases, many=True)
+        context = {
+            'package_file_url_name': self.package_file_url_name(),
+            'icon_file_url_name': self.icon_file_url_name(),
+            'namespace': namespace,
+            'path': path
+        }
+        serializer = ReleaseSerializer(releases, many=True, context=context)
         return Response(serializer.data)
 
     def post(self, request, namespace, path):
@@ -265,19 +281,36 @@ class UserAppReleaseList(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save(universal_app=app)
-        data = ReleaseSerializer(instance).data
+        context = {
+            'package_file_url_name': self.package_file_url_name(),
+            'icon_file_url_name': self.icon_file_url_name(),
+            'namespace': namespace,
+            'path': path
+        }
+        data = ReleaseSerializer(instance, context=context).data
         return Response(data, status=status.HTTP_201_CREATED)
 
 class OrganizationAppReleaseList(UserAppReleaseList):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
+    def package_file_url_name(self):
+        return 'org-app-package-file'
+
+    def icon_file_url_name(self):
+        return 'org-app-package-icon'
 
 class UserAppReleaseDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_namespace(self, path):
         return Namespace.user(path)
+
+    def package_file_url_name(self):
+        return 'user-app-package-file'
+
+    def icon_file_url_name(self):
+        return 'user-app-package-icon'
 
     def get_object(self, universal_app, release_id):
         try:
@@ -288,12 +321,46 @@ class UserAppReleaseDetail(APIView):
     def get(self, request, namespace, path, release_id):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         release = self.get_object(app, release_id)
-        serializer = ReleaseSerializer(release)
+        context = {
+            'package_file_url_name': self.package_file_url_name(),
+            'icon_file_url_name': self.icon_file_url_name(),
+            'namespace': namespace,
+            'path': path
+        }
+        serializer = ReleaseSerializer(release, context=context)
         return Response(serializer.data)
+
+    def put(self, request, namespace, path, release_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        release = self.get_object(app, release_id)
+        serializer = ReleaseCreateSerializer(release, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save(universal_app=app)
+        context = {
+            'package_file_url_name': self.package_file_url_name(),
+            'icon_file_url_name': self.icon_file_url_name(),
+            'namespace': namespace,
+            'path': path
+        }
+        return Response(ReleaseSerializer(instance, context=context).data)
+
+    def delete(self, request, namespace, path, release_id):
+        app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
+        release = self.get_object(app, release_id)
+        # todo: check release, upgrades use
+        release.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class OrganizationAppReleaseDetail(UserAppReleaseDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
+
+    def package_file_url_name(self):
+        return 'org-app-package-file'
+
+    def icon_file_url_name(self):
+        return 'org-app-package-icon'
 
 class UserStoreAppVivo(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

@@ -4595,6 +4595,382 @@
         }
       }
     },
+    "/users/{username}/apps/{path}/releases": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "List the releases",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application release list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Release a new version",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the release"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/users/{username}/apps/{path}/releases/{release_id}": {
+      "get": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the release",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the application release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the release",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the application release",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The user's username",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/orgs/{org_path}/apps/{path}/packages": {
       "get": {
         "security": [
@@ -5051,6 +5427,382 @@
           }
         }
       }
+    },
+    "/orgs/{org_path}/apps/{path}/releases": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "List the releases",
+        "parameters": [
+          {
+            "name": "org_path",
+            "in": "path",
+            "description": "The organization's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application release list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Release a new version",
+        "parameters": [
+          {
+            "name": "org_path",
+            "in": "path",
+            "description": "The organization's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "description": "the release"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/orgs/{org_path}/apps/{path}/releases/{release_id}": {
+      "get": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the release",
+        "parameters": [
+          {
+            "name": "org_path",
+            "in": "path",
+            "description": "The organization's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the application release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the release",
+        "parameters": [
+          {
+            "name": "org_path",
+            "in": "path",
+            "description": "The organization's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "distribute"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete the application release",
+        "parameters": [
+          {
+            "name": "org_path",
+            "in": "path",
+            "description": "The organization's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The app's path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "The release's id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "item deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5400,7 +6152,7 @@
             }
           },
           "icon_file": {
-            "type": "stirng",
+            "type": "string",
             "format": "url"
           },
           "update_time": {
@@ -5601,9 +6353,14 @@
       "PackageResponse": {
         "type": "object",
         "properties": {
+          "package_id": {
+            "type": "integer"
+          },
+          "uploader": {
+            "$ref": "#/components/schemas/Operator"
+          },
           "name": {
-            "type": "string",
-            "format": "slug"
+            "type": "string"
           },
           "description": {
             "type": "string"
@@ -5625,16 +6382,13 @@
           "short_version": {
             "type": "string"
           },
-          "internal_build": {
-            "type": "number"
-          },
           "size": {
-            "type": "number"
-          },
-          "bundle_identifier": {
-            "type": "string"
+            "type": "integer"
           },
           "commit_id": {
+            "type": "string"
+          },
+          "bundle_identifier": {
             "type": "string"
           },
           "min_os": {
@@ -5664,7 +6418,32 @@
           }
         }
       },
-      "Release": {
+      "ReleaseRequest": {
+        "type": "object",
+        "properties": {
+          "release_notes": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "package_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReleaseUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "release_notes": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReleaseResponse": {
         "type": "object",
         "properties": {
           "release_id": {
@@ -5676,11 +6455,10 @@
           "enabled": {
             "type": "boolean"
           },
-          "name": {
-            "type": "string",
-            "format": "slug"
+          "package_id": {
+            "type": "integer"
           },
-          "description": {
+          "name": {
             "type": "string"
           },
           "package_file": {
@@ -5700,16 +6478,13 @@
           "short_version": {
             "type": "string"
           },
-          "internal_build": {
-            "type": "string"
-          },
           "size": {
-            "type": "number"
-          },
-          "bundle_identifier": {
-            "type": "string"
+            "type": "integer"
           },
           "commit_id": {
+            "type": "string"
+          },
+          "bundle_identifier": {
             "type": "string"
           },
           "min_os": {
@@ -5717,6 +6492,17 @@
           },
           "channle": {
             "type": "string"
+          },
+          "os": {
+            "type": "string",
+            "enum": [
+              "Android",
+              "iOS",
+              "macOS",
+              "tvOS",
+              "Windows",
+              "Linux"
+            ]
           },
           "update_time": {
             "type": "string",
@@ -5746,11 +6532,10 @@
           "enabled": {
             "type": "boolean"
           },
-          "name": {
-            "type": "string",
-            "format": "slug"
+          "package_id": {
+            "type": "integer"
           },
-          "description": {
+          "name": {
             "type": "string"
           },
           "package_file": {
@@ -5770,16 +6555,13 @@
           "short_version": {
             "type": "string"
           },
-          "internal_build": {
-            "type": "string"
-          },
           "size": {
-            "type": "number"
-          },
-          "bundle_identifier": {
-            "type": "string"
+            "type": "integer"
           },
           "commit_id": {
+            "type": "string"
+          },
+          "bundle_identifier": {
             "type": "string"
           },
           "min_os": {
@@ -5788,6 +6570,17 @@
           "channle": {
             "type": "string"
           },
+          "os": {
+            "type": "string",
+            "enum": [
+              "Android",
+              "iOS",
+              "macOS",
+              "tvOS",
+              "Windows",
+              "Linux"
+            ]
+          },
           "update_time": {
             "type": "string",
             "format": "date-time"
@@ -5795,6 +6588,24 @@
           "create_time": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "Operator": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["User", "Token"]
+          },
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
           }
         }
       },

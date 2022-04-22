@@ -1,4 +1,4 @@
-import hashlib
+import hashlib, os, shutil
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -7,7 +7,8 @@ from application.models import Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
 from util.url import get_file_extension
-from util.storage import make_file_public
+from util.storage import remove_directory
+
 
 def distribute_package_path(instance, filename):
     universal_app = instance.app.universal_app
@@ -58,11 +59,30 @@ class Package(models.Model):
         super(Package, self).save(*args, **kwargs)
     
     def make_public(self):
-        make_file_public(self, self.package_file)
+        self.make_package_file_public(self.package_file)
+        self.make_package_file_public(self.icon_file)
+
+    def make_internal(self):
+        remove_directory(os.path.dirname(self.get_public_file_path(self.package_file)))
+
+    def make_package_file_public(self, file):
+        if not file.name:
+            return
+        initial_path = settings.MEDIA_ROOT + '/' + file.name
+        new_name = self.get_public_file_path(file)
+        new_path = settings.MEDIA_ROOT + '/' + new_name
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        shutil.copyfile(initial_path, new_path)
+
+    def get_public_file_path(self, file):
+        slug = self.app.universal_app.install_slug
+        os_name = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(self.app.os)
+        return slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip')
+
 
 class Release(models.Model):
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
-    package = models.ForeignKey(Package, on_delete=models.CASCADE)
+    package = models.OneToOneField(Package, on_delete=models.CASCADE)
     release_id = models.IntegerField()
     release_notes = models.CharField(max_length=1024, help_text="The release's release notes.")
     enabled = models.BooleanField(default=False, help_text="This value determines the whether a release currently is enabled or disabled.")
@@ -70,7 +90,7 @@ class Release(models.Model):
     update_time = models.DateTimeField(auto_now=True)
 
 class Upgrade(models.Model):
-    release = models.ForeignKey(Release, on_delete=models.CASCADE)
+    release = models.OneToOneField(Release, on_delete=models.CASCADE)
     release_notes = models.CharField(max_length=1024, help_text="The release's release notes.")
     upgrade_id = models.IntegerField()
     target_version = models.CharField(max_length=32)

@@ -1,7 +1,12 @@
-from django.test import TestCase
+import shutil
+from django.test import TestCase, override_settings
 
 
+@override_settings(MEDIA_ROOT='var/media/test')
 class BaseTestCase(TestCase):
+
+    def setUp(self):
+        shutil.rmtree('var/media/test', ignore_errors=True)
 
     def get_message(self, resp):
         try:

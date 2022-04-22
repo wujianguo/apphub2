@@ -5,6 +5,7 @@ from util.tests import BaseTestCase
 class DistributeBaseTest(BaseTestCase):
 
     def setUp(self):
+        super().setUp()
         if not os.path.exists('downloads'):
             os.makedirs('downloads')
         self.apk_path = 'downloads/android-sample.apk'
