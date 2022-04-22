@@ -4,7 +4,6 @@ from django.urls import reverse
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from uritemplate import partial
 from distribute.serializers import *
 from distribute.package_parser import parser
 from distribute.models import Release
@@ -315,7 +314,7 @@ class UserAppReleaseDetail(APIView):
     def get_object(self, universal_app, release_id):
         try:
             return Release.objects.get(app__universal_app=universal_app, release_id=release_id)
-        except Package.DoesNotExist:
+        except Release.DoesNotExist:
             raise Http404
 
     def get(self, request, namespace, path, release_id):

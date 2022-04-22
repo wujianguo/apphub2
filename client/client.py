@@ -9,6 +9,9 @@ class BaseClient:
     def set_username(self, username):
         pass
 
+    def get_or_head_file(self, path, query=None):
+        pass
+
     def get(self, path, query=None):
         pass
 

@@ -275,6 +275,12 @@ class Api:
         def get_one_package(self, package_id):
             return self.client.get(self.base_path + '/packages/' + str(package_id))
 
+        def update_package(self, package_id, data):
+            return self.client.put(self.base_path + '/packages/' + str(package_id), data)
+
+        def remove_package(self, package_id):
+            return self.client.delete(self.base_path + '/packages/' + str(package_id))
+
         def create_release(self, release):
             return self.client.post(self.base_path + '/releases', release)
 
@@ -345,3 +351,13 @@ class Api:
 
     def get_org_api(self, path):
         return Api.OrganizationApi(self.client, path)
+
+    def get_or_head_file(self, path):
+        return self.client.get_or_head_file(path)
+
+    def get(self, path):
+        return self.client.get(path)
+
+    def get_swagger(self):
+        return self.client.get('/docs/swagger.json')
+

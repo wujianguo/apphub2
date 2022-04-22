@@ -39,6 +39,11 @@ class UserEmailTest(BaseTestCase):
         r = api.get_user_api().me()
         self.assertEqual(r.json()['email_verified'], True)
 
+        api2: Api = Api(UnitTestClient())
+        user['username'] += 'xyz'
+        r = api2.get_user_api().register(user)
+        self.assert_status_409(r)
+
     def test_user_do_not_has_an_email(self):
         api = self.register()
         r = api.get_user_api().request_verify_email()

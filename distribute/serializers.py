@@ -1,4 +1,3 @@
-from email.policy import default
 import os.path
 from django.db.models import Max
 from django.urls import reverse
@@ -9,6 +8,9 @@ from distribute.stores.store import get_store
 from application.models import Application
 from util.choice import ChoiceField
 from util.url import build_absolute_uri
+
+def compare_short_version(short_version1, short_version2):
+    return True
 
 class PackageSerializer(serializers.ModelSerializer):
     os = serializers.SerializerMethodField()
@@ -128,13 +130,23 @@ class ReleaseCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError('package_id is not found.')
         return package
 
+    def get_latest_packages(self, universal_app):
+        packages = Package.objects.filter(app__universal_app=universal_app).order_by('-package_id')[:2]
+        return packages
+
     def create(self, validated_data):
         universal_app = validated_data['universal_app']
+        install_slug = universal_app.install_slug
         package_id = validated_data['package_id']
         package = self.get_and_check_package(package_id, universal_app)
+        latest_packages = self.get_latest_packages(universal_app)
+        latest_package = latest_packages.first()
+        if latest_package is not None and not compare_short_version(package.short_version, latest_package.short_version):
+            raise serializers.ValidationError('short version should bigger than.')
+            
         # todo: check version
         if validated_data['enabled']:
-            package.make_public()
+            package.make_public(install_slug)
 
         release_id = Release.objects.filter(app__universal_app=universal_app).count() + 1
         app = package.app
@@ -149,6 +161,7 @@ class ReleaseCreateSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         universal_app = validated_data['universal_app']
+        install_slug = universal_app.install_slug
         release_notes = validated_data.get('validated_data', None)
         enabled = validated_data.get('enabled', None)
         package_id = validated_data.get('package_id', None)
@@ -158,7 +171,15 @@ class ReleaseCreateSerializer(serializers.Serializer):
         package = None
         if package_id is not None:
             package = self.get_and_check_package(package_id, universal_app)
-            # todo: check version
+            if package.short_version != instance.package.short_version:
+                latest_packages = self.get_latest_packages(universal_app)
+                latest_package = latest_packages.first()
+                if latest_package and latest_package.id != instance.package.id:
+                    raise serializers.ValidationError('package short version should equal with ' + instance.package.short_version)
+                if latest_package and latest_package.id == instance.package.id:
+                    if len(latest_packages) >= 2:
+                        if compare_short_version(package.short_version, latest_packages[1].short_version):
+                            raise serializers.ValidationError('short version should bigger than.')
 
         if release_notes is not None:
             instance.release_notes = release_notes
@@ -166,27 +187,29 @@ class ReleaseCreateSerializer(serializers.Serializer):
         if enabled is None and package is not None:
             if instance.enabled:
                 instance.package.make_internal()
-                package.make_public()
+                package.make_public(install_slug)
             instance.package = package
             instance.save()
             return instance
 
         if enabled is not None and package is None:
             if enabled:
-                instance.package.make_public()
+                instance.package.make_public(install_slug)
             else:
-                instance.package.make_internal()
+                instance.package.make_internal(install_slug)
             instance.enabled = enabled
             instance.save()
             return instance
 
         if enabled is not None and enabled != instance.enabled and package is not None:
             if instance.enabled:
-                instance.package.make_internal()
+                instance.package.make_internal(install_slug)
             if enabled:
-                package.make_public()
+                package.make_public(install_slug)
             instance.enabled = enabled
             instance.package = package
+            instance.save()
+            return instance
 
         instance.save()
         return instance

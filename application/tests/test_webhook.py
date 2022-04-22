@@ -26,6 +26,8 @@ class UserAppWebhookTest(BaseTestCase):
             'when_new_package': True,
             'when_new_release': True
         }
+        r = app_api.create_webhook({'url': 'xyz'})
+        self.assert_status_400(r)
         r = app_api.create_webhook(webhook)
         self.assert_status_201(r)
         webhook_id = r.json()['id']
@@ -42,6 +44,8 @@ class UserAppWebhookTest(BaseTestCase):
         }
         r = app_api.update_webhook(webhook_id, update_webhook)
         self.assert_status_200(r)
+        r = app_api.update_webhook(webhook_id, {'when_new_package': 'xyz'})
+        self.assert_status_400(r)
 
         r = app_api.get_one_webhook(webhook_id)
         self.assert_status_200(r)

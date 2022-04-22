@@ -19,7 +19,12 @@ class DjangoTestClient(BaseClient):
         self.username = username
 
     def build_url(self, path):
+        if path.startswith(self.base_url):
+            return path
         return self.base_url + path
+
+    def get_or_head_file(self, path, query=None):
+        return self.client.get(self.build_url(path), data=query, HTTP_AUTHORIZATION=self.token)
 
     def get(self, path, query=None):
         return self.client.get(self.build_url(path), data=query, HTTP_AUTHORIZATION=self.token)

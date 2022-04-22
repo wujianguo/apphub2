@@ -27,6 +27,9 @@ class UserAppTokenTest(BaseTestCase):
             'enable_get_releases': True,
             'enable_get_upgrades': True
         }
+        r = app_api.create_token({'namm': 'token2'})
+        self.assert_status_400(r)
+
         r = app_api.create_token(token)
         self.assert_status_201(r)
         token_id = r.json()['id']
@@ -43,6 +46,9 @@ class UserAppTokenTest(BaseTestCase):
         }
         r = app_api.update_token(token_id, update_token)
         self.assert_status_200(r)
+
+        r = app_api.update_token(token_id, {'enable_get_releases': 'abc'})
+        self.assert_status_400(r)
 
         r = app_api.get_one_token(token_id)
         self.assert_status_200(r)

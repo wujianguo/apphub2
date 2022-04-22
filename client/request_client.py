@@ -24,6 +24,9 @@ class RequestsClient(BaseClient):
             }
         return {}
 
+    def get_or_head_file(self, path, query=None):
+        return requests.head(self.build_url(path), headers=self.headers())
+
     def get(self, path, query=None):
         return requests.get(self.build_url(path), headers=self.headers())
 

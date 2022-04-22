@@ -50,7 +50,26 @@ class UserUploadPackageTest(DistributeBaseTest):
         token = r.json()['token']
         r = anonymous_app_api.upload_package(file_path, token)
         self.assert_status_201(r)
+        package_id = r.json()['package_id']
 
+        r = app_api.get_one_package(package_id)
+        package_file = r.json()['package_file']
+        icon_file = r.json()['icon_file']
+
+        larry.get_or_head_file(package_file)
+        self.assert_status_200(r)
+        if icon_file:
+            larry.get_or_head_file(icon_file)
+            self.assert_status_200(r)
+
+        r = app_api.update_package(package_id, {'description': 'xyz'})
+        self.assert_status_200(r)
+        
+        r = app_api.remove_package(package_id)
+        self.assert_status_204(r)
+
+        r = app_api.get_one_package(package_id)
+        self.assert_status_404(r)
 
     def test_ipa_upload(self):
         self.assert_upload(self.ipa_path)

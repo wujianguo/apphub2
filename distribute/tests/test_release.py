@@ -82,6 +82,11 @@ class UserReleaseTest(DistributeBaseTest):
         r = app_api.update_release(release_id, {'enabled': False})
         self.assert_status_200(r)
 
+        r = app_api.remove_release(release_id)
+        self.assert_status_204(r)
+
+        r = app_api.get_one_release(release_id)
+        self.assert_status_404(r)
 
     def test_vivo_store(self):
         app = self.chrome_app()

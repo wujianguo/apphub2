@@ -1,4 +1,4 @@
-import hashlib, os, shutil
+import hashlib, os
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -7,7 +7,7 @@ from application.models import Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
 from util.url import get_file_extension
-from util.storage import remove_directory
+from util.storage import make_directory, remove_directory, copy_file
 
 
 def distribute_package_path(instance, filename):
@@ -58,26 +58,25 @@ class Package(models.Model):
             self.fingerprint = md5.hexdigest()
         super(Package, self).save(*args, **kwargs)
     
-    def make_public(self):
-        self.make_package_file_public(self.package_file)
-        self.make_package_file_public(self.icon_file)
+    def make_public(self, install_slug):
+        self.make_package_file_public(self.package_file, install_slug)
+        self.make_package_file_public(self.icon_file, install_slug)
 
-    def make_internal(self):
-        remove_directory(os.path.dirname(self.get_public_file_path(self.package_file)))
+    def make_internal(self, install_slug):
+        remove_directory(os.path.dirname(self.get_public_file_path(self.package_file, install_slug)))
 
-    def make_package_file_public(self, file):
+    def make_package_file_public(self, file, install_slug):
         if not file.name:
             return
         initial_path = settings.MEDIA_ROOT + '/' + file.name
-        new_name = self.get_public_file_path(file)
+        new_name = self.get_public_file_path(file, install_slug)
         new_path = settings.MEDIA_ROOT + '/' + new_name
-        os.makedirs(os.path.dirname(new_path), exist_ok=True)
-        shutil.copyfile(initial_path, new_path)
+        make_directory(os.path.dirname(new_path), exist_ok=True)
+        copy_file(initial_path, new_path)
 
-    def get_public_file_path(self, file):
-        slug = self.app.universal_app.install_slug
+    def get_public_file_path(self, file, install_slug):
         os_name = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(self.app.os)
-        return slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip')
+        return install_slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip')
 
 
 class Release(models.Model):

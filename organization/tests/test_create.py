@@ -22,6 +22,8 @@ class OrganizationCreateTest(BaseTestCase):
 
         r2 = api.get_org_api(path).get_org()
         self.assertDictEqual(r.json(), r2.json())
+        rr = api.get_or_head_file(r2.json()['icon_file'])
+        self.assert_status_200(rr)
 
         r3 = api.get_user_api().get_visible_org_list()
         self.assertDictEqual(self.get_resp_list(r3)[0], r.json())

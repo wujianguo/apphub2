@@ -27,6 +27,9 @@ class UserUniversalAppCreateTest(BaseTestCase):
         self.assert_status_200(r2)
         self.assertDictEqual(r.json(), r2.json())
 
+        r = larry.get_or_head_file(r2.json()['icon_file'])
+        self.assert_status_200(r)
+
     def test_invalid_path(self):
         # 1. only letters, numbers, underscores or hyphens
         # 2. 0 < len(path) <= 32

@@ -23,6 +23,9 @@ class UserRegisterTest(BaseTestCase):
         r = anonymous.get_user_api().get_user(user['username'])
         self.assert_status_200(r)
         self.assert_partial_dict_equal2(user, r.json(), assert_keys)
+        avatar_url = r.json()['avatar']
+        r = anonymous.get_or_head_file(avatar_url)
+        self.assert_status_200(r)
 
     def assert_register_failure_400(self, user):
         api: Api = Api(UnitTestClient())
@@ -106,16 +109,6 @@ class UserRegisterTest(BaseTestCase):
             'password': 'BillGates@password'
         }
         self.assert_register_failure_400(user)
-
-    # def test_duplicate_email(self):
-    #     user = {
-    #         'username': 'BillGates',
-    #         'email': 'BillGates@example.com',
-    #         'password': 'BillGates@password'
-    #     }
-    #     self.assert_register_success(user)
-    #     user['username'] += '1'
-    #     self.assert_register_failure_400(user)
 
     def test_invalid_password(self):
         user = {
