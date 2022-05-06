@@ -57,3 +57,29 @@ def generate_icon_image(text, size=(128, 128)):
     file = tempfile.NamedTemporaryFile(suffix='.png')
     image.save(file)
     return file
+
+def generate_logo_image(colors, size=(128, 128)):
+
+    image = Image.new('RGBA', size=size, color=0)
+    draw = ImageDraw.Draw(image)
+
+    from_color = hex_to_rgb(colors[0])
+    to_color = hex_to_rgb(colors[1])
+    for i, color in enumerate(interpolate(from_color, to_color, image.width * 2)):
+        draw.line([(i, 0), (0, i)], tuple(color), width=1)
+
+    try:
+        font_name = 'Apple Chancery.ttf'
+        font = ImageFont.truetype(font_name, size=int(size[0]/2))
+        draw.text((size[0]/2, size[1]/2), 'A', fill=hex_to_rgb(colors[2]), font=font, anchor="mm")
+
+        # font_name = 'Brush Script.ttf'
+        # font = ImageFont.truetype(font_name, size=int(size[0]/5))
+        # draw.text((size[0]/2, size[1] / 15 * 13), 'APPHUB', fill=hex_to_rgb(colors[2]), font=font, anchor="mm")
+    except:
+        pass
+    image.show()
+    # return file
+
+if __name__ == '__main__':
+    generate_logo_image(COLORS[4], size=(128,128))

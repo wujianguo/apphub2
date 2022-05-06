@@ -10,6 +10,7 @@ from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from user.models import EmailCode
 from user.serializers import *
 from util.reserved import reserved_names
@@ -57,7 +58,7 @@ def register(request):
 def login(request):
     serializer = UserLoginSerializer(data=request.data)
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError(serializer.errors)
     user = serializer.validated_data['user']
     token, _ = Token.objects.get_or_create(user=user)
     response_serializer = UserSerializer(user)
@@ -65,7 +66,7 @@ def login(request):
     response_data['token'] = token.key
     return Response(response_data, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+@api_view(['DELETE'])
 @permission_classes([permissions.IsAuthenticated])
 def logout_user(request):
     request.user.auth_token.delete()

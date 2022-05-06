@@ -41,7 +41,7 @@ class Api:
             return r
 
         def logout(self):
-            return self.client.post('/user/logout')
+            return self.client.delete('/user/logout')
 
         def me(self):
             return self.client.get('/user')

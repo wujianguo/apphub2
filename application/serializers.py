@@ -32,11 +32,13 @@ class UniversalAppSerializer(serializers.ModelSerializer):
         if obj.owner:
             return {
                 'path': obj.owner.username,
+                'name': obj.owner.get_full_name(),
                 'kind': 'User'
             }
         if obj.org:
             return {
                 'path': obj.org.path,
+                'name': obj.org.name,
                 'kind': 'Organization'
             }
 
@@ -153,11 +155,13 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
         if obj.app.owner:
             return {
                 'path': obj.app.owner.username,
+                'name': obj.app.owner.get_full_name(),
                 'kind': 'User'
             }
         if obj.app.org:
             return {
                 'path': obj.app.org.path,
+                'name': obj.app.name,
                 'kind': 'Organization'
             }
 

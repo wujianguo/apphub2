@@ -6113,10 +6113,7 @@
             "type": "string",
             "format": "slug"
           },
-          "username": {
-            "$ref": "#/components/schemas/username"
-          },
-          "role_kind": {
+          "role": {
             "$ref": "#/components/schemas/RoleKind"
           },
           "name": {
@@ -6622,6 +6619,9 @@
               "User",
               "Organization"
             ]
+          },
+          "name": {
+            "type": "string"
           }
         }
       },

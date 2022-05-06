@@ -54,7 +54,7 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         user = authenticate(username=username, password=password, email=email)
         if user is None:
-            raise serializers.ValidationError('A user with this username and password is not found.')
+            raise serializers.ValidationError({'message': 'A user with this username/email and password is not found.'})
         return {
             'user': user
         }

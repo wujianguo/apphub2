@@ -74,7 +74,7 @@ class UserAppPackageUpload(APIView):
         ext = get_file_extension(file.name)
         pkg = parser.parse(file.file, ext)
         if pkg is None:
-            raise serializers.ValidationError('Can not parse the package.')
+            raise serializers.ValidationError({'message': 'Can not parse the package.'})
         if pkg.app_icon is not None:
             icon_file = ContentFile(pkg.app_icon)
             icon_file.name = 'icon.png'
@@ -86,7 +86,7 @@ class UserAppPackageUpload(APIView):
         elif pkg.os == Application.OperatingSystem.Android:
             app = universal_app.android
         if app is None:
-            raise serializers.ValidationError('OS not supported.')
+            raise serializers.ValidationError({'message': 'OS not supported.'})
         package_id = Package.objects.filter(app__universal_app=universal_app).count() + 1
         instance = Package.objects.create(
             operator_object_id=operator_content_object.id,
@@ -347,6 +347,8 @@ class UserAppReleaseDetail(APIView):
     def delete(self, request, namespace, path, release_id):
         app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         release = self.get_object(app, release_id)
+        if release.enabled:
+            release.package.make_internal(app.install_slug)
         # todo: check release, upgrades use
         release.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

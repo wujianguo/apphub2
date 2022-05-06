@@ -118,16 +118,16 @@ class ReleaseCreateSerializer(serializers.Serializer):
             package = Package.objects.get(package_id=package_id, app__universal_app=universal_app)
             try:
                 Release.objects.get(package=package)
-                raise serializers.ValidationError('the package already released.')
+                raise serializers.ValidationError({'message': 'the package already released.'})
             except Release.DoesNotExist:
                 pass
             try:
                 Release.objects.get(package__version=package.version, package__short_version=package.short_version)
-                raise serializers.ValidationError('the version already released.')
+                raise serializers.ValidationError({'message': 'the version already released.'})
             except Release.DoesNotExist:
                 pass
         except Package.DoesNotExist:
-            raise serializers.ValidationError('package_id is not found.')
+            raise serializers.ValidationError({'message': 'package_id is not found.'})
         return package
 
     def get_latest_packages(self, universal_app):
@@ -142,7 +142,7 @@ class ReleaseCreateSerializer(serializers.Serializer):
         latest_packages = self.get_latest_packages(universal_app)
         latest_package = latest_packages.first()
         if latest_package is not None and not compare_short_version(package.short_version, latest_package.short_version):
-            raise serializers.ValidationError('short version should bigger than.')
+            raise serializers.ValidationError({'message': 'short version should bigger than.'})
             
         # todo: check version
         if validated_data['enabled']:
@@ -175,11 +175,11 @@ class ReleaseCreateSerializer(serializers.Serializer):
                 latest_packages = self.get_latest_packages(universal_app)
                 latest_package = latest_packages.first()
                 if latest_package and latest_package.id != instance.package.id:
-                    raise serializers.ValidationError('package short version should equal with ' + instance.package.short_version)
+                    raise serializers.ValidationError({'message': 'package short version should equal with ' + instance.package.short_version})
                 if latest_package and latest_package.id == instance.package.id:
                     if len(latest_packages) >= 2:
                         if compare_short_version(package.short_version, latest_packages[1].short_version):
-                            raise serializers.ValidationError('short version should bigger than.')
+                            raise serializers.ValidationError({'message': 'short version should bigger than.'})
 
         if release_notes is not None:
             instance.release_notes = release_notes
@@ -284,7 +284,7 @@ class ReleaseStoreCreateSerializer(serializers.Serializer):
         try:
             release = Release.objects.get(app__universal_app=universal_app, release_id=release_id)
         except Release.DoesNotExist:
-            raise serializers.ValidationError('Release is not found.')
+            raise serializers.ValidationError({'message': 'Release is not found.'})
         release_notes = validated_data.get('release_notes', release.release_notes)
         instance = ReleaseStore.objects.create(
             group_id=group_id,
