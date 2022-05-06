@@ -1,5 +1,5 @@
 <a href="https://github.com/myapphub/apphub">
-    <img src="logo.png" alt="AppHub logo" title="AppHub" align="left" height="32" />
+    <img src="logo.png" alt="AppHub logo" title="AppHub" align="right" height="32" />
 </a>
 
 # AppHub
