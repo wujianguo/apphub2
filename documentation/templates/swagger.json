@@ -1822,7 +1822,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApplicationnUserUpdateRequest"
+                "$ref": "#/components/schemas/ApplicationUserUpdateRequest"
               }
             }
           }
@@ -3304,7 +3304,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApplicationnUserUpdateRequest"
+                "$ref": "#/components/schemas/ApplicationUserUpdateRequest"
               }
             }
           }

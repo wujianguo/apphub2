@@ -5,4 +5,4 @@
 # AppHub
 
 [![Django CI](https://github.com/myapphub/apphub/actions/workflows/django.yml/badge.svg)](https://github.com/myapphub/apphub/actions/workflows/django.yml)
-[![codecov](https://codecov.io/gh/myapphub/apphub/branch/main/graph/badge.svg?token=bvVfssLQbK)](https://codecov.io/gh/myapphub/apphub)
+[![codecov](https://codecov.io/gh/myapphub/apphub/branch/main/graph/badge.svg?token=JbvDW07tsh)](https://codecov.io/gh/myapphub/apphub)

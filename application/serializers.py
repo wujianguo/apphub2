@@ -147,6 +147,14 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
     create_time = serializers.ReadOnlyField(source='app.create_time')
     enable_os = serializers.SerializerMethodField()
     namespace = serializers.SerializerMethodField()
+    icon_file = serializers.SerializerMethodField()
+
+    def get_icon_file(self, obj):
+        if obj.app.owner:
+            location = reverse('user-app-icon', args=(obj.app.owner.username, obj.app.path, os.path.basename(obj.app.icon_file.name)))
+        if obj.app.org:
+            location = reverse('org-app-icon', args=(obj.app.org.path, obj.app.path, os.path.basename(obj.app.icon_file.name)))
+        return build_absolute_uri(location)
 
     def get_enable_os(self, obj):
         return obj.app.enable_os_enum_list()
@@ -167,7 +175,7 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniversalAppUser
-        fields = ['namespace', 'path', 'install_slug', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
+        fields = ['namespace', 'path', 'install_slug', 'name', 'icon_file', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
 
 class UniversalAppUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
