@@ -22,6 +22,10 @@ jobs:
         pip install -r requirements.txt
         pip install zappa
     - name: Configure AWS profile
-      run: pwd
+      run: |
+        aws configure set region us-east-1 --profile default
+        aws configure set output json --profile default
+        aws configure set aws_access_key_id ${{ secrets.PRIMARY_AWS_ACCESS_KEY_ID }} --profile default
+        aws configure set aws_secret_access_key ${{ secrets.PRIMARY_AWS_SECRET_ACCESS_KEY }} --profile default
     - name: Zappa deployments
       run: zappa update dev
