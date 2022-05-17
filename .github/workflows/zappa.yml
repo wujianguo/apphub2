@@ -1,0 +1,27 @@
+name: Zappa onto AWS Lambda + API Gateway
+
+on:
+  push:
+    branches: [ zappa ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install zappa
+    - name: Configure AWS profile
+      run: pwd
+    - name: Zappa deployments
+      run: zappa update dev
