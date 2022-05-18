@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-EXTERNAL_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_URL', default='')
+EXTERNAL_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_URL', default='https://wltlgxhma7.execute-api.us-east-1.amazonaws.co/dev')
 if EXTERNAL_URL:
     ALLOWED_HOSTS = [urlparse(EXTERNAL_URL).hostname]
 else:

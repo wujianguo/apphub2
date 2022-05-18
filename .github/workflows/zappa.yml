@@ -1,4 +1,4 @@
-name: Zappa onto AWS Lambda + API Gateway
+name: Zappa deploy
 
 on:
   push:
@@ -17,17 +17,16 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install zappa
-        python -m venv zappa-apphub && source zappa-apphub/bin/activate
-        pip install -r requirements.txt
-        pip install zappa
+        pip install pipenv
+        pipenv install
     - name: Configure AWS profile
       run: |
-        aws configure set region us-east-1 --profile default
-        aws configure set output json --profile default
-        aws configure set aws_access_key_id ${{ secrets.PRIMARY_AWS_ACCESS_KEY_ID }} --profile default
-        aws configure set aws_secret_access_key ${{ secrets.PRIMARY_AWS_SECRET_ACCESS_KEY }} --profile default
+        pipenv run aws configure set region us-east-1 --profile default
+        pipenv run aws configure set output json --profile default
+        pipenv run aws configure set aws_access_key_id ${{ secrets.PRIMARY_AWS_ACCESS_KEY_ID }} --profile default
+        pipenv run aws configure set aws_secret_access_key ${{ secrets.PRIMARY_AWS_SECRET_ACCESS_KEY }} --profile default
     - name: Zappa deployments
       run: |
         source zappa-apphub/bin/activate
-        zappa update dev
+        pipenv run python manage.py migrate
+        pipenv run zappa update dev
