@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'django_s3_sqlite',
 ]
 
 MIDDLEWARE = [
@@ -90,9 +89,8 @@ WSGI_APPLICATION = 'apphub.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_s3_sqlite',
-        'NAME': 'db.sqlite3',
-        'BUCKET': 'zappa-89b3bd'
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

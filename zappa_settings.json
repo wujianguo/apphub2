@@ -5,6 +5,7 @@
         "profile_name": "default",
         "project_name": "zappa-apphub",
         "runtime": "python3.9",
-        "s3_bucket": "zappa-89b3bd"
+        "s3_bucket": "zappa-89b3bd",
+        "use_precompiled_packages": false
     }
 }

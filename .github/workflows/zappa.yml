@@ -10,16 +10,16 @@ jobs:
     environment: dev
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.8
     - name: Install Dependencies
       run: |
+        wget https://raw.githubusercontent.com/FlipperPA/django-s3-sqlite/master/shared-objects/python-3-8/_sqlite3.so
         python -m pip install --upgrade pip
         pip install pipenv
         pipenv install
-        pipenv install django-s3-sqlite
         pipenv install zappa
     - name: Configure AWS profile
       run: |

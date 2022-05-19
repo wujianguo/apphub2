@@ -4,4 +4,3 @@ requests
 coverage
 Pillow
 androguard
-django-s3-sqlite
