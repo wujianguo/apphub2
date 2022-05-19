@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'django-s3-sqlite',
+    'django_s3_sqlite',
 ]
 
 MIDDLEWARE = [

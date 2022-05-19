@@ -29,4 +29,5 @@ jobs:
         pipenv run aws configure set aws_secret_access_key ${{ secrets.PRIMARY_AWS_SECRET_ACCESS_KEY }} --profile default
     - name: Zappa deployments
       run: |
+        pipenv run python manage.py migrate
         pipenv run zappa update dev
