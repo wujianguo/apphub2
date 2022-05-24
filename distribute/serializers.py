@@ -14,11 +14,22 @@ def compare_short_version(short_version1, short_version2):
 
 class PackageSerializer(serializers.ModelSerializer):
     os = serializers.SerializerMethodField()
+    install_url = serializers.SerializerMethodField()
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
     uploader = serializers.SerializerMethodField()
     def get_os(self, obj):
         return ChoiceField(choices=Application.OperatingSystem.choices).to_representation(obj.app.os)
+
+    def get_install_url(self, obj):
+        if obj.app.os == Application.OperatingSystem.iOS:
+            url_name = self.context['plist_url_name']
+            namespace = self.context['namespace']
+            path = self.context['path']
+            location = reverse(url_name, args=(namespace, path, obj.package_id))
+            return 'itms-services://?action=download-manifest&url=' + build_absolute_uri(location)
+        else:
+            return self.get_package_file(obj)
 
     def get_package_file(self, obj):
         url_name = self.context['package_file_url_name']
@@ -54,8 +65,8 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'os', 'channle', 'description', 'update_time', 'create_time']
-        read_only_fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'os', 'channle']
+        fields = ['uploader', 'name', 'install_url', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'os', 'channle', 'description', 'update_time', 'create_time']
+        read_only_fields = ['uploader', 'name', 'install_url', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'os', 'channle']
 
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:

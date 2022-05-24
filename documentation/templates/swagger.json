@@ -2758,7 +2758,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Adds an application to the user",
+        "summary": "Adds an application to the organization",
         "parameters": [
           {
             "name": "org_path",
@@ -4140,6 +4140,257 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/download/{slug}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "Get the app detail by slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "The app's slug",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "item detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/download/{slug}/packages": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "List the packages",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "The app's slug",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "os",
+            "in": "query",
+            "description": "os",
+            "required": false,
+            "style": "simple",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Android",
+                "iOS",
+                "macOS",
+                "tvOS",
+                "Windows",
+                "Linux"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "application package list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PackageResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      }
+    },
+    "/download/{slug}/packages/latest": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "Get the latest package",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "The app's slug",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "os",
+            "in": "query",
+            "description": "os",
+            "required": false,
+            "style": "simple",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Android",
+                "iOS",
+                "macOS",
+                "tvOS",
+                "Windows",
+                "Linux"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the package",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
+          }
+        }
+      }
+    },
+    "/download/{slug}/packages/{package_id}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "distribute"
+        ],
+        "summary": "Get the package by package_id",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "The app's slug",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "package_id",
+            "in": "path",
+            "description": "The package's package_id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tye package",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
           }
         }
       }

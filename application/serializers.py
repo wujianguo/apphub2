@@ -1,4 +1,4 @@
-import os
+import os.path
 from rest_framework import serializers
 from django.core.files import File
 from django.urls import reverse

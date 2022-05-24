@@ -27,13 +27,15 @@ SECRET_KEY = 'django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-EXTERNAL_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_URL', default='')
-if EXTERNAL_URL:
-    ALLOWED_HOSTS = [urlparse(EXTERNAL_URL).hostname]
+EXTERNAL_WEB_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_WEB_URL', default='')
+
+EXTERNAL_API_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_API_URL', default='')
+if EXTERNAL_API_URL:
+    ALLOWED_HOSTS = [urlparse(EXTERNAL_API_URL).hostname]
 else:
     ALLOWED_HOSTS = []
 
-EXTERNAL_API_URL = EXTERNAL_URL + '/api'
+API_URL_PREFIX = os.environ.get('APPHUB_SETTINGS_EXTERNAL_API_PREFIX', default='')
 
 # Application definition
 
@@ -150,10 +152,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 STATIC_ROOT = os.environ.get('APPHUB_SETTINGS_STATIC_ROOT', default='var/static/')
-STATIC_URL = EXTERNAL_URL + '/static/'
+STATIC_URL = EXTERNAL_WEB_URL + '/static/'
 
 MEDIA_ROOT = os.environ.get('APPHUB_SETTINGS_MEDIA_ROOT', default='var/media')
-MEDIA_URL = EXTERNAL_URL + '/media/'
+MEDIA_URL = EXTERNAL_WEB_URL + '/media/'
 
 
 # Default primary key field type
@@ -173,5 +175,5 @@ SESSION_COOKIE_SECURE = True
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 CSRF_COOKIE_SECURE = True
-if EXTERNAL_URL.startswith('https://') and not DEBUG:
+if EXTERNAL_WEB_URL.startswith('https://') and not DEBUG:
     SECURE_SSL_REDIRECT = True
