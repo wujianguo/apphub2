@@ -95,14 +95,15 @@ class SlugAppPackageLatest(APIView):
 
     def get(self, request, slug):
         app = check_app_download_permission(request.user, slug)
-        os = request.GET.get('os', None)
+        tryOS = request.GET.get('tryOS', None)
         namespace = ''
         if app.owner:
             namespace = app.owner.username
         elif app.org:
             namespace = app.org.path
-        if os:
-            package = Package.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(os)).order_by('-create_time').first()
+
+        if tryOS and tryOS in app.enable_os_enum_list():
+            package = Package.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(tryOS)).order_by('-create_time').first()
         else:
             package = Package.objects.filter(app__universal_app=app).order_by('-create_time').first()
         context = {

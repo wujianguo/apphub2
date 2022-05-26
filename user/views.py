@@ -1,4 +1,5 @@
 import datetime
+from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
 from django.conf import settings
@@ -23,6 +24,7 @@ UserModel = get_user_model()
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 def register(request):
     serializer = UserRegisterSerializer(data=request.data)
     if not serializer.is_valid():
