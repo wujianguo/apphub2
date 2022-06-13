@@ -1,0 +1,27 @@
+name: Aliyun FC
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: AliyunFC
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        pip3 install -t . -r requirements.txt
+        zip -r server-code.zip .
+    - name: Deploy to aliyun fc
+      run: |
+        wget https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+        tar xzvf aliyun-cli-linux-latest-amd64.tgz
+        chmod 755 aliyun
+        ./aliyun configure set --profile akProfile --mode AK --region ${{ RegionId}} --access-key-id ${{ AccessKeyId }} --access-key-secret ${{ AccessKeySecret }}
+        ./aliyun oss cp server-code.zip oss://${{ BucketName }}/code/api.zip -f
