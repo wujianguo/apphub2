@@ -1,13 +1,10 @@
-import os
 from rest_framework import serializers
 from django.core.files import File
-from django.urls import reverse
 from application.models import Application, UniversalApp, UniversalAppUser, AppAPIToken, Webhook
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.image import generate_icon_image
 from util.role import Role
-from util.url import build_absolute_uri
 
 class UniversalAppSerializer(serializers.ModelSerializer):
     path = serializers.SlugField(max_length=32, help_text='The path of the universal application.')
@@ -19,11 +16,7 @@ class UniversalAppSerializer(serializers.ModelSerializer):
     icon_file = serializers.SerializerMethodField()
 
     def get_icon_file(self, obj):
-        if obj.owner:
-            location = reverse('user-app-icon', args=(obj.owner.username, obj.path, os.path.basename(obj.icon_file.name)))
-        if obj.org:
-            location = reverse('org-app-icon', args=(obj.org.path, obj.path, os.path.basename(obj.icon_file.name)))
-        return build_absolute_uri(location)
+        return obj.icon_file.url
 
     def get_enable_os(self, obj):
         return obj.enable_os_enum_list()
@@ -147,6 +140,10 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
     create_time = serializers.ReadOnlyField(source='app.create_time')
     enable_os = serializers.SerializerMethodField()
     namespace = serializers.SerializerMethodField()
+    icon_file = serializers.SerializerMethodField()
+
+    def get_icon_file(self, obj):
+        return obj.app.icon_file.url
 
     def get_enable_os(self, obj):
         return obj.app.enable_os_enum_list()
@@ -167,7 +164,7 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UniversalAppUser
-        fields = ['namespace', 'path', 'install_slug', 'name', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
+        fields = ['namespace', 'path', 'install_slug', 'name', 'icon_file', 'description', 'visibility', 'enable_os', 'update_time', 'create_time']
 
 class UniversalAppUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

@@ -45,11 +45,19 @@ class IpaParser(AppParser):
 
     @property
     def app_icon(self):
-        pattern = re.compile(r'Payload/[^/]*.app/AppIcon60x60@3x.png')
+        icons = self.plist.get('CFBundleIcons', {})
+        icons = icons.get('CFBundlePrimaryIcon').get('CFBundleIconFiles')
+        if len(icons) == 0:
+            return None
+        icons = sorted(icons, reverse=True)
+        pattern = re.compile(r'Payload/[^/]*.app/[^/]*.png')
         for path in self.zip.namelist():
             m = pattern.match(path)
             if m is not None:
-                return self.zip.read(m.group())
+                name = path.split('/')[-1]
+                if name.startswith(icons[0]) and name.endswith('.png'):
+                    return self.zip.read(path)
+
         return None
 
     @property

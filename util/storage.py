@@ -11,10 +11,3 @@ def remove_directory(path):
 
 def copy_file(src, dst):
     shutil.copyfile(src, dst)
-
-def internal_file_response(file, name):
-    response = Response()
-    redirect = urlparse(settings.MEDIA_URL).path + os.path.join(os.path.dirname(file.name), name)
-    response['X-Accel-Redirect'] = redirect
-    response['Content-Type'] = ''
-    return response

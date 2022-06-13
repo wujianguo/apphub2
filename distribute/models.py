@@ -1,4 +1,4 @@
-import hashlib, os
+import hashlib
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -7,7 +7,7 @@ from application.models import Application
 from util.choice import ChoiceField
 from distribute.stores.base import StoreType
 from util.url import get_file_extension
-from util.storage import make_directory, remove_directory, copy_file
+# from util.storage import make_directory, remove_directory, copy_file
 
 
 def distribute_package_path(instance, filename):
@@ -15,18 +15,18 @@ def distribute_package_path(instance, filename):
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
     name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename, 'zip')
     if universal_app.org is not None:
-      return 'internal/orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
+      return 'orgs/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
-      return 'internal/users/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
+      return 'users/{0}/apps/{1}/{2}/packages/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 def distribute_icon_path(instance, filename):
     universal_app = instance.app.universal_app
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.app.os)
     name = universal_app.path + '_' + instance.short_version + '_' + str(instance.package_id) + '.' + get_file_extension(filename)
     if instance.app.universal_app.org is not None:
-      return 'internal/orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
+      return 'orgs/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.org.id, universal_app.id, os, instance.short_version, name)
     else:
-      return 'internal/users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
+      return 'users/{0}/apps/{1}/{2}/icons/{3}/{4}'.format(universal_app.owner.id, universal_app.id, os, instance.short_version, name)
 
 class Package(models.Model):
     operator_content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
@@ -45,7 +45,7 @@ class Package(models.Model):
     bundle_identifier = models.CharField(max_length=64, help_text="The identifier of the apps bundle.")
     extra = models.JSONField(default=dict)
     description = models.CharField(max_length=1024, help_text="The package's description.")
-    commit_id = models.CharField(max_length=32)
+    commit_id = models.CharField(max_length=40)
     channle = models.CharField(max_length=32)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -59,24 +59,26 @@ class Package(models.Model):
         super(Package, self).save(*args, **kwargs)
     
     def make_public(self, install_slug):
-        self.make_package_file_public(self.package_file, install_slug)
-        self.make_package_file_public(self.icon_file, install_slug)
+        pass
+        # self.make_package_file_public(self.package_file, install_slug)
+        # self.make_package_file_public(self.icon_file, install_slug)
 
     def make_internal(self, install_slug):
-        remove_directory(os.path.dirname(self.get_public_file_path(self.package_file, install_slug)))
+        pass
+    #     remove_directory(os.path.dirname(self.get_public_file_path(self.package_file, install_slug)))
 
-    def make_package_file_public(self, file, install_slug):
-        if not file.name:
-            return
-        initial_path = settings.MEDIA_ROOT + '/' + file.name
-        new_name = self.get_public_file_path(file, install_slug)
-        new_path = settings.MEDIA_ROOT + '/' + new_name
-        make_directory(os.path.dirname(new_path))
-        copy_file(initial_path, new_path)
+    # def make_package_file_public(self, file, install_slug):
+    #     if not file.name:
+    #         return
+    #     initial_path = settings.MEDIA_ROOT + '/' + file.name
+    #     new_name = self.get_public_file_path(file, install_slug)
+    #     new_path = settings.MEDIA_ROOT + '/' + new_name
+    #     make_directory(os.path.dirname(new_path))
+    #     copy_file(initial_path, new_path)
 
-    def get_public_file_path(self, file, install_slug):
-        os_name = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(self.app.os)
-        return install_slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip')
+    # def get_public_file_path(self, file, install_slug):
+    #     os_name = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(self.app.os)
+    #     return install_slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip')
 
 
 class Release(models.Model):

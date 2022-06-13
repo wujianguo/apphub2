@@ -17,7 +17,6 @@ from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
 from util.image import generate_icon_image
-from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
@@ -178,18 +177,11 @@ class OrganizationIcon(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user_org.org.icon_file.delete()
         instance = serializer.save()
-        location = reverse('org-icon', args=(path, os.path.basename(instance.icon_file.name)))
+
         # todo response no content
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        response['Location'] = build_absolute_uri(location)
+        response['Location'] = instance.icon_file.url
         return response
-
-class OrganizationIconDetail(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get(self, request, path, icon_name):
-        org = check_org_view_permission(path, request.user)
-        return internal_file_response(org.icon_file, icon_name)
 
 class OrganizationUserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

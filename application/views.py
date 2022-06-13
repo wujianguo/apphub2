@@ -16,7 +16,6 @@ from util.reserved import reserved_names
 from util.pagination import get_pagination_params
 from util.url import build_absolute_uri
 from util.role import Role
-from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
@@ -170,9 +169,6 @@ class UserUniversalAppIcon(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def url_name(self):
-        return 'user-app-icon'
-
     def post(self, request, namespace, path):
         app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
         serializer = UniversalAppIconSerializer(app, data=request.data)
@@ -180,30 +176,12 @@ class UserUniversalAppIcon(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         app.icon_file.delete()
         instance = serializer.save()
-        location = reverse(self.url_name(), args=(namespace, path, os.path.basename(instance.icon_file.name)))
         # todo response no content
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        response['Location'] = build_absolute_uri(location)
+        response['Location'] = instance.icon_file.url
         return response
 
 class OrganizationUniversalAppIcon(UserUniversalAppIcon):
-    def get_namespace(self, path):
-        return Namespace.organization(path)
-
-    def url_name(self):
-        return 'org-app-icon'
-
-class UserUniversalAppIconDetail(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-    def get(self, request, namespace, path, icon_name):
-        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        return internal_file_response(app.icon_file, icon_name)
-
-class OrganizationUniversalAppIconDetail(UserUniversalAppIconDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 

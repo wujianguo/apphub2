@@ -1,11 +1,8 @@
-import os.path
 from rest_framework import serializers
-from django.urls import reverse
 from organization.models import Organization, OrganizationUser
 from util.choice import ChoiceField
 from util.visibility import VisibilityType
 from util.role import Role
-from util.url import build_absolute_uri
 
 class OrganizationSerializer(serializers.ModelSerializer):
     path = serializers.SlugField(max_length=32, help_text='The path of the organization.')
@@ -15,8 +12,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     icon_file = serializers.SerializerMethodField()
 
     def get_icon_file(self, obj):
-        location = reverse('org-icon', args=(obj.path, os.path.basename(obj.icon_file.name)))
-        return build_absolute_uri(location)
+        return obj.icon_file.url
 
     class Meta:
         model = Organization
@@ -39,8 +35,7 @@ class UserOrganizationSerializer(serializers.ModelSerializer):
     icon_file = serializers.SerializerMethodField()
 
     def get_icon_file(self, obj):
-        location = reverse('org-icon', args=(obj.org.path, os.path.basename(obj.org.icon_file.name)))
-        return build_absolute_uri(location)
+        return obj.org.icon_file.url
 
     class Meta:
         model = OrganizationUser

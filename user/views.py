@@ -1,4 +1,5 @@
 import datetime
+from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
 from django.conf import settings
@@ -16,13 +17,20 @@ from user.serializers import *
 from util.reserved import reserved_names
 from util.image import generate_icon_image
 from util.url import build_absolute_uri
-from util.storage import internal_file_response
 
 UserModel = get_user_model()
 
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def auth_config(request):
+    data = {
+
+    }
+    return Response(data)
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 def register(request):
     serializer = UserRegisterSerializer(data=request.data)
     if not serializer.is_valid():
@@ -207,12 +215,3 @@ def user_info(request, username):
         raise Http404
     serializer = UserSerializer(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny])
-def user_avatar(request, username, name):
-    try:
-        user = UserModel.objects.get(username=username)
-    except UserModel.DoesNotExist:
-        raise Http404
-    return internal_file_response(user.avatar, name)

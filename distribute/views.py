@@ -1,16 +1,127 @@
+from datetime import timedelta
+from django.core.signing import TimestampSigner, BadSignature
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.http import Http404
+from django.shortcuts import render
 from django.urls import reverse
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from application.views import UserModel
 from distribute.serializers import *
 from distribute.package_parser import parser
 from distribute.models import Release
 from application.models import Application
+from application.serializers import UniversalAppSerializer
 from application.permissions import *
 from util.url import get_file_extension
-from util.storage import internal_file_response
+from util.pagination import get_pagination_params
+
+class SlugAppDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, slug):
+        app = check_app_download_permission(request.user, slug)
+        data = UniversalAppSerializer(app).data
+        return Response(data)
+
+class SlugAppPackageList(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def plist_url_name(self, app):
+        if app.owner:
+            return 'user-app-package-plist'
+        elif app.org:
+            return 'org-app-package-plist'
+
+    def get(self, request, slug):
+        app = check_app_download_permission(request.user, slug)
+        page, per_page = get_pagination_params(request)
+        os = request.GET.get('os', None)
+
+        namespace = ''
+        if app.owner:
+            namespace = app.owner.username
+        elif app.org:
+            namespace = app.org.path
+
+        if os:
+            query = Package.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(os))
+        else:
+            query = Package.objects.filter(app__universal_app=app)
+        count = query.count()
+        packages = query.order_by('-create_time')[(page - 1) * per_page: page * per_page]
+        context = {
+            'plist_url_name': self.plist_url_name(app),
+            'namespace': namespace,
+            'path': app.path
+        }
+        serializer = PackageSerializer(packages, many=True, context=context)
+        headers = {'X-Total-Count': count}
+        return Response(serializer.data, headers=headers)
+
+class SlugAppPackageLatest(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def plist_url_name(self, app):
+        if app.owner:
+            return 'user-app-package-plist'
+        elif app.org:
+            return 'org-app-package-plist'
+
+    def get(self, request, slug):
+        app = check_app_download_permission(request.user, slug)
+        tryOS = request.GET.get('tryOS', None)
+        namespace = ''
+        if app.owner:
+            namespace = app.owner.username
+        elif app.org:
+            namespace = app.org.path
+
+        if tryOS and tryOS in app.enable_os_enum_list():
+            package = Package.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(tryOS)).order_by('-create_time').first()
+        else:
+            package = Package.objects.filter(app__universal_app=app).order_by('-create_time').first()
+        context = {
+            'plist_url_name': self.plist_url_name(app),
+            'namespace': namespace,
+            'path': app.path
+        }
+        serializer = PackageSerializer(package, context=context)
+        return Response(serializer.data)
+
+
+class SlugAppPackageDetail(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def plist_url_name(self, app):
+        if app.owner:
+            return 'user-app-package-plist'
+        elif app.org:
+            return 'org-app-package-plist'
+
+    def get_object(self, universal_app, package_id):
+        try:
+            return Package.objects.get(app__universal_app=universal_app, package_id=package_id)
+        except Package.DoesNotExist:
+            raise Http404
+
+    def get(self, request, slug, package_id):
+        app = check_app_download_permission(request.user, slug)
+        namespace = ''
+        if app.owner:
+            namespace = app.owner.username
+        elif app.org:
+            namespace = app.org.path
+        package = self.get_object(app, package_id)
+        context = {
+            'plist_url_name': self.plist_url_name(app),
+            'namespace': namespace,
+            'path': app.path
+        }
+        serializer = PackageSerializer(package, context=context)
+        return Response(serializer.data)
 
 
 class UserAppPackageList(APIView):
@@ -19,58 +130,51 @@ class UserAppPackageList(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def package_file_url_name(self):
-        return 'user-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'user-app-package-icon'
+    def plist_url_name(self):
+        return 'user-app-package-plist'
 
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        packages = Package.objects.filter(app__universal_app=app)
+        os = request.GET.get('os', None)
+        page, per_page = get_pagination_params(request)
+
+        if os:
+            query = Package.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(os))
+        else:
+            query = Package.objects.filter(app__universal_app=app)
+        count = query.count()
+        packages = query.order_by('-create_time')[(page - 1) * per_page: page * per_page]
+
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
         serializer = PackageSerializer(packages, many=True, context=context)
-        return Response(serializer.data)
+        headers = {'X-Total-Count': count}
+        return Response(serializer.data, headers=headers)
 
 class OrganizationAppPackageList(UserAppPackageList):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
-    def package_file_url_name(self):
-        return 'org-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'org-app-package-icon'
+    def plist_url_name(self):
+        return 'org-app-package-plist'
 
 
 class UserAppPackageUpload(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly | UploadPackagePermission]
 
-    def get_namespace(self, path):
-        return Namespace.user(path)
+    def get_namespace(self, namespace):
+        return Namespace.user(namespace)
 
     def url_name(self):
         return 'user-app-package'
 
-    def package_file_url_name(self):
-        return 'user-app-package-file'
+    def plist_url_name(self):
+        return 'user-app-package-plist'
 
-    def icon_file_url_name(self):
-        return 'user-app-package-icon'
-
-    def create_package(self, operator_content_object, data, universal_app):
-        serializer = UploadPackageSerializer(data=data)
-        if not serializer.is_valid():
-            raise serializers.ValidationError(serializer.errors)
-            # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        file = serializer.validated_data['file']
-        commit_id = serializer.validated_data.get('commit_id', '')
-        description = serializer.validated_data.get('description', '')
+    def create_package(self, operator_content_object, universal_app, file, commit_id='', description=''):
         ext = get_file_extension(file.name)
         pkg = parser.parse(file.file, ext)
         if pkg is None:
@@ -109,18 +213,33 @@ class UserAppPackageUpload(APIView):
             app.save()
         return instance
 
-    def post(self, request, namespace, path):
+    def check_and_get_app(self, request, namespace, path):
         if request.user.is_authenticated:
             app, role = check_app_upload_permission(request.user, path, self.get_namespace(namespace))
-            instance = self.create_package(request.user, request.data, app)
+            return app
         else:
             app = get_app(path, self.get_namespace(namespace))
             self.check_object_permissions(request, app)
-            instance = self.create_package(request.token, request.data, app)
+            return app
+
+    def post(self, request, namespace, path):
+        serializer = UploadPackageSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors)
+        file = serializer.validated_data['file']
+        commit_id = serializer.validated_data.get('commit_id', '')
+        description = serializer.validated_data.get('description', '')
+        app = self.check_and_get_app(request, namespace, path)
+        uploader = None
+        if request.user.is_authenticated:
+            uploader = request.user
+        elif request.token:
+            uploader = request.token
+
+        instance = self.create_package(uploader, app, file, commit_id, description)
 
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -137,11 +256,116 @@ class OrganizationAppPackageUpload(UserAppPackageUpload):
     def url_name(self):
         return 'org-app-package'
 
-    def package_file_url_name(self):
-        return 'org-app-package-file'
+    def plist_url_name(self):
+        return 'org-app-package-plist'
 
-    def icon_file_url_name(self):
-        return 'org-app-package-icon'
+class AliyunOssUploadPackageCallback(UserAppPackageUpload):
+    permission_classes = [permissions.AllowAny]
+
+    def url_name(self):
+        if self.app.owner:
+            return 'user-app-package'
+        elif self.app.org:
+            return 'org-app-package'
+        else:
+            return ''
+
+    def plist_url_name(self):
+        if self.app.owner:
+            return 'user-app-package-plist'
+        elif self.app.org:
+            return 'org-app-package-plist'
+        else:
+            return ''
+
+    def get_uploader(self, type, uploader):
+        if type == 'user':
+            return UserModel.objects.get(username=uploader)
+        elif type == 'token':
+            return AppAPIToken.objects.get(name=uploader)
+        else:
+            raise PermissionDenied
+
+    def post(self, request, uploader_type, uploader_name, slug):
+        # todo
+        serializer = UploadAliyunOssPackageSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors)
+        app = get_slug_app(slug)
+        self.app = app
+        namespace = ''
+        if app.owner:
+            namespace = app.owner.username
+        elif app.org:
+            namespace = app.org.path
+        path = app.path
+
+        file = default_storage.open(serializer.validated_data['object'])
+        commit_id = serializer.validated_data.get('commit_id', '')
+        description = serializer.validated_data.get('description', '')
+
+        instance = self.create_package(self.get_uploader(uploader_type, uploader_name), app, file, commit_id, description)
+
+        context = {
+            'plist_url_name': self.plist_url_name(),
+            'namespace': namespace,
+            'path': path
+        }
+        serializer = PackageSerializer(instance, context=context)
+        response = Response(serializer.data, status=status.HTTP_201_CREATED)
+        location = reverse(self.url_name(), args=(namespace, path, instance.package_id))
+        response['Location'] = build_absolute_uri(location)
+        return response
+
+
+class AliyunOssRequestUploadPackage(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly | UploadPackagePermission]
+
+    def get_namespace(self, app, namespace):
+        if app.owner:
+            return Namespace.user(namespace)
+        elif app.org:
+            return Namespace.organization(namespace)
+        else:
+            return None
+
+    def check_app(self, request, app):
+        namespace = ''
+        if app.owner:
+            namespace = app.owner.username
+        elif app.org:
+            namespace = app.org.path
+        path = app.path
+
+        if request.user.is_authenticated:
+            app, role = check_app_upload_permission(request.user, path, self.get_namespace(app, namespace))
+            return app
+        else:
+            self.check_object_permissions(request, app)
+            return app
+
+    def post(self, request, slug):
+        serializer = RequestUploadPackageSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise serializers.ValidationError(serializer.errors)
+        file_name = serializer.validated_data['file_name']
+        description = serializer.validated_data.get('description', '')
+        commit_id = serializer.validated_data.get('commit_id', '')
+        app = get_slug_app(slug)
+        self.check_app(request, app)
+        uploader_type = ''
+        uploader_name = ''
+        if request.user.is_authenticated:
+            uploader_type = 'user'
+            uploader_name = request.user.username
+        elif request.token:
+            uploader_type = 'token'
+            uploader_name = request.token.name
+        response = Response()
+        location = reverse('aliyun-oss-callback', args=(uploader_type, uploader_name, slug))
+        callback_url = build_absolute_uri(location)
+        response.data = default_storage.request_upload(file_name, description, commit_id, callback_url, slug, uploader_name)
+        return response
 
 
 class UserAppPackageDetail(APIView):
@@ -150,11 +374,8 @@ class UserAppPackageDetail(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def package_file_url_name(self):
-        return 'user-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'user-app-package-icon'
+    def plist_url_name(self):
+        return 'user-app-package-plist'
 
     def get_object(self, universal_app, package_id):
         try:
@@ -166,8 +387,7 @@ class UserAppPackageDetail(APIView):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         package = self.get_object(app, package_id)
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -182,8 +402,7 @@ class UserAppPackageDetail(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save()
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -200,15 +419,12 @@ class OrganizationAppPackageDetail(UserAppPackageDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
-    def package_file_url_name(self):
-        return 'org-app-package-file'
+    def plist_url_name(self):
+        return 'org-app-package-plist'
 
-    def icon_file_url_name(self):
-        return 'org-app-package-icon'
-
-class UserAppPackageFile(APIView):
+class UserAppPackagePlist(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
+    template_name = 'install.plist'
     def get_namespace(self, path):
         return Namespace.user(path)
 
@@ -218,34 +434,31 @@ class UserAppPackageFile(APIView):
         except Package.DoesNotExist:
             raise Http404
 
-    def get(self, request, namespace, path, package_id, name):
-        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        package = self.get_object(app, package_id)
-        return internal_file_response(package.package_file, name)
-
-class OrganizationAppPackageFile(UserAppPackageFile):
-    def get_namespace(self, path):
-        return Namespace.organization(path)
-
-
-class UserAppPackageIcon(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_namespace(self, path):
-        return Namespace.user(path)
-
-    def get_object(self, universal_app, package_id):
+    def get(self, request, namespace, path, sign_name, sign_value, package_id):
+        name = namespace + path + str(package_id)
+        sign = sign_name + ':' + sign_value
+        signer = TimestampSigner()
         try:
-            return Package.objects.get(app__universal_app=universal_app, package_id=package_id)
-        except Package.DoesNotExist:
-            raise Http404
+            value = signer.unsign(name+':'+sign, max_age=timedelta(seconds=60*60*24))
+        except BadSignature:
+            raise PermissionDenied
 
-    def get(self, request, namespace, path, package_id, name):
-        app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
+        if value != name:
+            raise PermissionDenied
+
+        app = get_app(path, self.get_namespace(namespace))
         package = self.get_object(app, package_id)
-        return internal_file_response(package.icon_file, name)
 
-class OrganizationAppPackageIcon(UserAppPackageIcon):
+        data = {
+            'ipa': package.package_file.url,
+            'icon': package.icon_file.url,
+            'identifier': package.bundle_identifier,
+            'version': package.short_version,
+            'name': package.name
+        }
+        return render(request, self.template_name, data, content_type='application/xml')
+
+class OrganizationAppPackagePlist(UserAppPackagePlist):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
@@ -256,23 +469,28 @@ class UserAppReleaseList(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def package_file_url_name(self):
-        return 'user-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'user-app-package-icon'
+    def plist_url_name(self):
+        return 'user-app-package-plist'
 
     def get(self, request, namespace, path):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
-        releases = Release.objects.filter(app__universal_app=app)
+        os = request.GET.get('os', None)
+        page, per_page = get_pagination_params(request)
+
+        if os:
+            query = Release.objects.filter(app__universal_app=app, app__os=ChoiceField(choices=Application.OperatingSystem.choices).to_internal_value(os))
+        else:
+            query = Release.objects.filter(app__universal_app=app)
+        count = query.count()
+        releases = query.order_by('-create_time')[(page - 1) * per_page: page * per_page]
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
         serializer = ReleaseSerializer(releases, many=True, context=context)
-        return Response(serializer.data)
+        headers = {'X-Total-Count': count}
+        return Response(serializer.data, headers=headers)
 
     def post(self, request, namespace, path):
         app, role = check_app_manager_permission(request.user, path, self.get_namespace(namespace))
@@ -281,8 +499,7 @@ class UserAppReleaseList(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save(universal_app=app)
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -293,11 +510,8 @@ class OrganizationAppReleaseList(UserAppReleaseList):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
-    def package_file_url_name(self):
-        return 'org-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'org-app-package-icon'
+    def plist_url_name(self):
+        return 'org-app-package-plist'
 
 class UserAppReleaseDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -305,11 +519,8 @@ class UserAppReleaseDetail(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def package_file_url_name(self):
-        return 'user-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'user-app-package-icon'
+    def plist_url_name(self):
+        return 'user-app-package-plist'
 
     def get_object(self, universal_app, release_id):
         try:
@@ -321,8 +532,7 @@ class UserAppReleaseDetail(APIView):
         app, role = check_app_view_permission(request.user, path, self.get_namespace(namespace))
         release = self.get_object(app, release_id)
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -337,8 +547,7 @@ class UserAppReleaseDetail(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save(universal_app=app)
         context = {
-            'package_file_url_name': self.package_file_url_name(),
-            'icon_file_url_name': self.icon_file_url_name(),
+            'plist_url_name': self.plist_url_name(),
             'namespace': namespace,
             'path': path
         }
@@ -357,11 +566,8 @@ class OrganizationAppReleaseDetail(UserAppReleaseDetail):
     def get_namespace(self, path):
         return Namespace.organization(path)
 
-    def package_file_url_name(self):
-        return 'org-app-package-file'
-
-    def icon_file_url_name(self):
-        return 'org-app-package-icon'
+    def plist_url_name(self):
+        return 'org-app-package-plist'
 
 class UserStoreAppVivo(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

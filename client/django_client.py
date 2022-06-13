@@ -4,7 +4,7 @@ from client.client import BaseClient
 
 class DjangoTestClient(BaseClient):
     def __init__(self, base_url=''):
-        self.base_url = base_url + '/api'
+        self.base_url = base_url# + '/api'
         self.token = ''
         self.username = ''
         self.client = Client()
@@ -24,7 +24,7 @@ class DjangoTestClient(BaseClient):
         return self.base_url + path
 
     def get_or_head_file(self, path, query=None):
-        return self.client.get(self.build_url(path), data=query, HTTP_AUTHORIZATION=self.token)
+        return self.client.head(self.build_url(path), data=query, HTTP_AUTHORIZATION=self.token)
 
     def get(self, path, query=None):
         return self.client.get(self.build_url(path), data=query, HTTP_AUTHORIZATION=self.token)

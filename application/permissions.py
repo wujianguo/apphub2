@@ -136,6 +136,14 @@ def check_app_view_permission(user, path, namespace):
     if namespace.is_organization():
         return check_org_app_view_permission(user, path, namespace.path)
 
+def check_app_download_permission(user, slug):
+    app = UniversalApp.objects.get(install_slug=slug)
+    if app.owner:
+        check_app_view_permission(user, app.path, Namespace.user(app.owner.username))
+    elif app.org:
+        check_app_view_permission(user, app.path, Namespace.organization(app.org.path))
+    return app
+
 def get_user_app(path, ownername):
     try:
         return UniversalApp.objects.get(path=path, owner__username=ownername)
@@ -153,6 +161,12 @@ def get_app(path, namespace):
         return get_user_app(path, namespace.path)
     if namespace.is_organization():
         return get_org_app(path, namespace.path)
+
+def get_slug_app(slug):
+    try:
+        return UniversalApp.objects.get(install_slug=slug)
+    except UniversalApp.DoesNotExist:
+        raise Http404
 
 def check_user_app_manager_permission(user, path, ownername):
     try:

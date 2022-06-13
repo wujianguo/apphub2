@@ -1,6 +1,6 @@
 import tempfile, random
 from PIL import Image, ImageDraw, ImageFont
-
+from django.conf import settings
 
 def generate_random_image(size=(128, 128)):
     image = Image.new('RGBA', size=size)
@@ -50,7 +50,7 @@ def generate_icon_image(text, size=(128, 128)):
 
     try:
         # todo: choose font by system
-        font = ImageFont.truetype('PingFang.ttc', size=int(size[0]/2))
+        font = ImageFont.truetype(settings.FONT_FILE, size=int(size[0]/2))
         draw.text((size[0]/2, size[1]/2), text[0], fill=hex_to_rgb(colors[2]), font=font, anchor="mm")
     except:
         pass

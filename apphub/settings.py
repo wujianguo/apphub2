@@ -22,18 +22,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e'
-
+SECRET_KEY = os.environ.get('APPHUB_SETTINGS_SECRET_KEY', default='django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e')
+# gp$u=3+j%te3+
+# **8)csv5u^3
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('APPHUB_SETTINGS_DEBUG_MODE', default=True)
 
-EXTERNAL_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_URL', default='')
-if EXTERNAL_URL:
-    ALLOWED_HOSTS = [urlparse(EXTERNAL_URL).hostname]
+EXTERNAL_WEB_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_WEB_URL', default='')
+
+EXTERNAL_API_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_API_URL', default='')
+if EXTERNAL_API_URL:
+    ALLOWED_HOSTS = [urlparse(EXTERNAL_API_URL).hostname]
 else:
     ALLOWED_HOSTS = []
 
-EXTERNAL_API_URL = EXTERNAL_URL + '/api'
+API_URL_PREFIX = urlparse(EXTERNAL_API_URL).path
+if API_URL_PREFIX and len(API_URL_PREFIX) > 0:
+    API_URL_PREFIX = API_URL_PREFIX[1:]
 
 # Application definition
 
@@ -87,13 +92,20 @@ WSGI_APPLICATION = 'apphub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+DATABASES_ENGINE =  os.environ.get('APPHUB_SETTINGS_DEFAULT_SDATABASES_ENGINE', default='django.db.backends.sqlite3')
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': DATABASES_ENGINE,
     }
 }
-
+if DATABASES_ENGINE == 'django.db.backends.sqlite3':
+    DATABASES['default']['NAME'] = os.environ.get('APPHUB_SETTINGS_DATABASE_NAME', default=BASE_DIR / 'db.sqlite3')
+elif DATABASES_ENGINE == 'django.db.backends.mysql':
+    DATABASES['default']['NAME'] = os.environ.get("APPHUB_SETTINGS_DATABASE_NAME")
+    DATABASES['default']['HOST'] = os.environ.get("APPHUB_SETTINGS_DATABASE_HOST")
+    DATABASES['default']['PORT'] = os.environ.get("APPHUB_SETTINGS_DATABASE_PORT")
+    DATABASES['default']['USER'] = os.environ.get("APPHUB_SETTINGS_DATABASE_USER")
+    DATABASES['default']['PASSWORD'] = os.environ.get("APPHUB_SETTINGS_DATABASE_PASSWORD")
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -146,14 +158,31 @@ USE_I18N = True
 
 USE_TZ = True
 
+FONT_FILE = os.environ.get('APPHUB_SETTINGS_FONT_FILE', 'PingFang.ttc')
+
+STATICFILES_STORAGE = os.environ.get('APPHUB_SETTINGS_STATICFILES_STORAGE', 'django.contrib.staticfiles.storage.StaticFilesStorage')
+# DEFAULT_FILE_STORAGE = os.environ.get('APPHUB_SETTINGS_DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage')
+DEFAULT_FILE_STORAGE = os.environ.get('APPHUB_SETTINGS_DEFAULT_FILE_STORAGE', 'storage.NginxFileStorage.NginxPrivateFileStorage')
+
+
+if STATICFILES_STORAGE == 'storage.AliyunOssStorage.AliyunOssStaticStorage' or DEFAULT_FILE_STORAGE == 'storage.AliyunOssStorage.AliyunOssMediaStorage':
+    ALIYUN_OSS_ACCESS_KEY_ID = os.environ.get('ALIYUN_OSS_ACCESS_KEY_ID')
+    ALIYUN_OSS_ACCESS_KEY_SECRET = os.environ.get('ALIYUN_OSS_ACCESS_KEY_SECRET')
+    ALIYUN_OSS_BUCKET_NAME = os.environ.get('ALIYUN_OSS_BUCKET_NAME')
+    ALIYUN_OSS_ENDPOINT =  os.environ.get('ALIYUN_OSS_ENDPOINT')
+    ALIYUN_OSS_PUBLIC_URL =  os.environ.get('ALIYUN_OSS_PUBLIC_URL', ALIYUN_OSS_ENDPOINT)
+    ALIYUN_OSS_KEY_PREFIX = os.environ.get('ALIYUN_OSS_KEY_PREFIX', '')
+    ALIYUN_OSS_ROLE_ARN = os.environ.get('ALIYUN_OSS_ROLE_ARN')
+    ALIYUN_OSS_REGION_ID = os.environ.get('ALIYUN_OSS_REGION_ID')
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 STATIC_ROOT = os.environ.get('APPHUB_SETTINGS_STATIC_ROOT', default='var/static/')
-STATIC_URL = EXTERNAL_URL + '/static/'
+STATIC_URL = os.environ.get('APPHUB_SETTINGS_STATIC_URL', default=EXTERNAL_WEB_URL + '/static/')
 
-MEDIA_ROOT = os.environ.get('APPHUB_SETTINGS_MEDIA_ROOT', default='var/media')
-MEDIA_URL = EXTERNAL_URL + '/media/'
+MEDIA_ROOT = os.environ.get('APPHUB_SETTINGS_MEDIA_ROOT', default='var/media/')
+MEDIA_URL = os.environ.get('APPHUB_SETTINGS_MEDIA_URL', default=EXTERNAL_WEB_URL + '/media/')
 
 
 # Default primary key field type
@@ -173,5 +202,5 @@ SESSION_COOKIE_SECURE = True
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 CSRF_COOKIE_SECURE = True
-if EXTERNAL_URL.startswith('https://') and not DEBUG:
+if EXTERNAL_WEB_URL.startswith('https://') and not DEBUG:
     SECURE_SSL_REDIRECT = True

@@ -9,16 +9,16 @@ def application_directory_path(instance, filename):
     name = 'icon.' + get_file_extension(filename)
     os = ChoiceField(choices=Application.OperatingSystem.choices).to_representation(instance.os)
     if instance.universal_app.org is not None:
-        return 'internal/orgs/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.org.id, instance.universal_app.id, os, name)
+        return 'orgs/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.org.id, instance.universal_app.id, os, name)
     else:
-        return 'internal/users/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.owner.id, instance.universal_app.id, os, name)
+        return 'users/{0}/apps/{1}/{2}/icons/{3}'.format(instance.universal_app.owner.id, instance.universal_app.id, os, name)
 
 def universal_app_directory_path(instance, filename):
     name = 'icon.' + get_file_extension(filename)
     if instance.org is not None:
-        return 'internal/orgs/{0}/apps/{1}/icons/{2}'.format(instance.org.id, instance.id, name)
+        return 'orgs/{0}/apps/{1}/icons/{2}'.format(instance.org.id, instance.id, name)
     else:
-        return 'internal/users/{0}/apps/{1}/icons/{2}'.format(instance.owner.id, instance.id, name)
+        return 'users/{0}/apps/{1}/icons/{2}'.format(instance.owner.id, instance.id, name)
 
 class Application(models.Model):
     class OperatingSystem(models.IntegerChoices, metaclass=CustomChoicesMeta):

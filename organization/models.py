@@ -7,7 +7,7 @@ from util.role import Role
 
 def organization_directory_path(instance, filename):
     name = 'icon.' + get_file_extension(filename)
-    return 'internal/orgs/{0}/icons/{1}'.format(instance.id, name)
+    return 'orgs/{0}/icons/{1}'.format(instance.id, name)
 
 class Organization(models.Model):
     path = models.SlugField(max_length=32, unique=True, help_text='The path of the organization.')

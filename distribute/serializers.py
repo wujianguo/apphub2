@@ -1,6 +1,7 @@
-import os.path
+from email.policy import default
 from django.db.models import Max
 from django.urls import reverse
+from django.core.signing import TimestampSigner
 from rest_framework import serializers
 from distribute.models import Package, Release, StoreApp, ReleaseStore
 from distribute.stores.base import StoreType
@@ -14,27 +15,33 @@ def compare_short_version(short_version1, short_version2):
 
 class PackageSerializer(serializers.ModelSerializer):
     os = serializers.SerializerMethodField()
+    install_url = serializers.SerializerMethodField()
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
     uploader = serializers.SerializerMethodField()
     def get_os(self, obj):
         return ChoiceField(choices=Application.OperatingSystem.choices).to_representation(obj.app.os)
 
+    def get_install_url(self, obj):
+        if obj.app.os == Application.OperatingSystem.iOS:
+            url_name = self.context['plist_url_name']
+            namespace = self.context['namespace']
+            path = self.context['path']
+            signer = TimestampSigner()
+            value = signer.sign(namespace+path+str(obj.package_id))
+            value = value.split(':')[1:]
+            location = reverse(url_name, args=(namespace, path, value[0], value[1], obj.package_id))
+            return 'itms-services://?action=download-manifest&url=' + build_absolute_uri(location)
+        else:
+            return self.get_package_file(obj)
+
     def get_package_file(self, obj):
-        url_name = self.context['package_file_url_name']
-        namespace = self.context['namespace']
-        path = self.context['path']
-        location = reverse(url_name, args=(namespace, path, obj.package_id, os.path.basename(obj.package_file.name)))
-        return build_absolute_uri(location)
+        return obj.package_file.url
 
     def get_icon_file(self, obj):
         if not obj.icon_file:
             return ''
-        url_name = self.context['icon_file_url_name']
-        namespace = self.context['namespace']
-        path = self.context['path']
-        location = reverse(url_name, args=(namespace, path, obj.package_id, os.path.basename(obj.icon_file.name)))
-        return build_absolute_uri(location)
+        return obj.icon_file.url
 
     def get_uploader(self, obj):
         if obj.operator_content_type.model == 'appapitoken':
@@ -54,8 +61,8 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'os', 'channle', 'description', 'update_time', 'create_time']
-        read_only_fields = ['uploader', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'os', 'channle']
+        fields = ['uploader', 'name', 'install_url', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'os', 'channle', 'description', 'update_time', 'create_time']
+        read_only_fields = ['uploader', 'name', 'install_url', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'min_os', 'os', 'channle']
 
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,11 +72,26 @@ class PackageUpdateSerializer(serializers.ModelSerializer):
 class UploadPackageSerializer(serializers.Serializer):
     file = serializers.FileField()
     description = serializers.CharField(default='')
-    commit_id = serializers.CharField(max_length=16, default='')
+    commit_id = serializers.CharField(max_length=40, default='')
     class Meta:
         fields = ['file', 'description', 'commit_id']
 
+class RequestUploadPackageSerializer(serializers.Serializer):
+    file_name = serializers.CharField(default='')
+    description = serializers.CharField(default='')
+    commit_id = serializers.CharField(max_length=16, default='')
+    class Meta:
+        fields = ['file_name', 'description', 'commit_id']
+
+class UploadAliyunOssPackageSerializer(serializers.Serializer):
+    object = serializers.CharField()
+    description = serializers.CharField(default='')
+    commit_id = serializers.CharField(max_length=16, default='')
+    class Meta:
+        fields = ['object', 'description', 'commit_id']
+
 class ReleaseSerializer(serializers.ModelSerializer):
+    os = serializers.SerializerMethodField()
     name = serializers.ReadOnlyField(source='package.name')
     fingerprint = serializers.ReadOnlyField(source='package.fingerprint')
     version = serializers.ReadOnlyField(source='package.version')
@@ -84,26 +106,21 @@ class ReleaseSerializer(serializers.ModelSerializer):
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
 
+    def get_os(self, obj):
+        return ChoiceField(choices=Application.OperatingSystem.choices).to_representation(obj.package.app.os)
+
     def get_package_file(self, obj):
-        url_name = self.context['package_file_url_name']
-        namespace = self.context['namespace']
-        path = self.context['path']
-        location = reverse(url_name, args=(namespace, path, obj.package.package_id, os.path.basename(obj.package.package_file.name)))
-        return build_absolute_uri(location)
+        return obj.package.package_file.url
 
     def get_icon_file(self, obj):
         if not obj.package.icon_file:
             return ''
-        url_name = self.context['icon_file_url_name']
-        namespace = self.context['namespace']
-        path = self.context['path']
-        location = reverse(url_name, args=(namespace, path, obj.package.package_id, os.path.basename(obj.package.icon_file.name)))
-        return build_absolute_uri(location)
+        return obj.package.icon_file.url
 
     class Meta:
         model = Release
-        fields = ['release_id', 'release_notes', 'enabled', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'update_time', 'create_time']
-        read_only_fields = ['release_id', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle']
+        fields = ['os', 'release_id', 'release_notes', 'enabled', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'update_time', 'create_time']
+        read_only_fields = ['os', 'release_id', 'name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle']
 
 class ReleaseCreateSerializer(serializers.Serializer):
     package_id = serializers.IntegerField()
