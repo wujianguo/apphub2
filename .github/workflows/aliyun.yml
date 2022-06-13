@@ -16,6 +16,7 @@ jobs:
         python-version: 3.9
     - name: Install Dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -t . -r requirements.txt
         zip -r server-code.zip .
     - name: Deploy to aliyun fc
