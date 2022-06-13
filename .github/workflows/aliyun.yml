@@ -26,3 +26,4 @@ jobs:
         chmod 755 aliyun
         ./aliyun configure set --profile akProfile --mode AK --region ${{ RegionId}} --access-key-id ${{ AccessKeyId }} --access-key-secret ${{ AccessKeySecret }}
         ./aliyun oss cp server-code.zip oss://${{ BucketName }}/code/api.zip -f
+ 
