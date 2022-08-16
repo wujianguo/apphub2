@@ -1,16 +1,21 @@
-import os.path, posixpath, tempfile, shutil, json
+import json
+import os.path
+import posixpath
+import shutil
+import tempfile
 from datetime import datetime
-from django.core.files.storage import Storage
-from django.core.files import File
-from django.utils.deconstruct import deconstructible
-from django.utils import timezone
+
 from django.conf import settings
+from django.core.files import File
+from django.core.files.storage import Storage
+from django.utils import timezone
+from django.utils.deconstruct import deconstructible
 
 try:
     import oss2
     from aliyunsdkcore import client
     from aliyunsdksts.request.v20150401 import AssumeRoleRequest
-except:
+except:  # noqa: E722
     pass
 
 
@@ -28,12 +33,13 @@ class AliyunOssFile(File):
             self.file = self._storage.open(self.name, mode).file
         return super(AliyunOssFile, self).open(mode)
 
+
 def _to_posix_path(name):
     return name.replace(os.sep, "/")
 
+
 @deconstructible
 class AliyunOssStorage(Storage):
-
     def __init__(self):
         self.access_key_id = settings.ALIYUN_OSS_ACCESS_KEY_ID
         self.access_key_secret = settings.ALIYUN_OSS_ACCESS_KEY_SECRET
@@ -44,10 +50,16 @@ class AliyunOssStorage(Storage):
         self.role_arn = settings.ALIYUN_OSS_ROLE_ARN
         self.region_id = settings.ALIYUN_OSS_REGION_ID
         self.auth = oss2.AuthV2(self.access_key_id, self.access_key_secret)
-        endpoint_is_cname = False if self.end_point.endswith('.aliyuncs.com') else True
-        self.bucket = oss2.Bucket(self.auth, self.end_point, self.bucket_name, is_cname=endpoint_is_cname)
-        public_url_is_cname = False if self.public_url.endswith('.aliyuncs.com') else True
-        self.bucket_url = oss2.Bucket(self.auth, self.public_url, self.bucket_name, is_cname=public_url_is_cname)
+        endpoint_is_cname = False if self.end_point.endswith(".aliyuncs.com") else True
+        self.bucket = oss2.Bucket(
+            self.auth, self.end_point, self.bucket_name, is_cname=endpoint_is_cname
+        )
+        public_url_is_cname = (
+            False if self.public_url.endswith(".aliyuncs.com") else True
+        )
+        self.bucket_url = oss2.Bucket(
+            self.auth, self.public_url, self.bucket_name, is_cname=public_url_is_cname
+        )
         super().__init__()
 
     def _get_key_name(self, name):
@@ -55,7 +67,7 @@ class AliyunOssStorage(Storage):
             name = name[1:]
         return posixpath.normpath(posixpath.join(self.key_prefix, _to_posix_path(name)))
 
-    def _open(self, name, mode='rb'):
+    def _open(self, name, mode="rb"):
         if mode != "rb":
             raise ValueError("OSS files can only be opened in read-only mode")
 
@@ -66,7 +78,9 @@ class AliyunOssStorage(Storage):
         if obj.content_length is None:
             shutil.copyfileobj(obj, tmpf)
         else:
-            oss2.utils.copyfileobj_and_verify(obj, tmpf, obj.content_length, request_id=obj.request_id)
+            oss2.utils.copyfileobj_and_verify(
+                obj, tmpf, obj.content_length, request_id=obj.request_id
+            )
         tmpf.seek(0)
         return AliyunOssFile(tmpf, target_name, self)
 
@@ -84,24 +98,22 @@ class AliyunOssStorage(Storage):
 
     def exists(self, name):
         name = _to_posix_path(name)
-        if name.endswith('/'):
+        if name.endswith("/"):
             result = self.bucket.list_objects_v2(prefix=self._get_key_name(name) + "/")
             return len(result.object_list) > 0
         ret = self.bucket.object_exists(self._get_key_name(name))
         if not ret:
-            return self.exists(name + '/')
+            return self.exists(name + "/")
         return ret
 
     def listdir(self, path):
         path = self._get_key_name(path)
         path = "" if path == "." else path + "/"
-        if name == ".":
-            name = ""
 
         files = []
         dirs = []
 
-        for obj in oss2.ObjectIterator(self.bucket, prefix=name, delimiter='/'):
+        for obj in oss2.ObjectIterator(self.bucket, prefix=path, delimiter="/"):
             if obj.is_prefix():
                 dirs.append(obj.key)
             else:
@@ -114,11 +126,11 @@ class AliyunOssStorage(Storage):
 
     def size(self, name):
         file_meta = self.get_file_meta(name)
-        return file_meta.content_length        
+        return file_meta.content_length
 
     def url(self, name):
         name = self._get_key_name(name)
-        return self.bucket_url.sign_url('GET', name, 60*60*24, slash_safe=True)
+        return self.bucket_url.sign_url("GET", name, 60 * 60 * 24, slash_safe=True)
 
     def _datetime_from_timestamp(self, ts):
         """
@@ -134,23 +146,23 @@ class AliyunOssStorage(Storage):
 
     get_created_time = get_accessed_time = get_modified_time
 
-    def request_upload(self, file_name, description, commit_id, callback_url, slug, uploader):
-        key_prefix = self.key_prefix + 'temp/upload/' + slug + '/' + uploader + '/'
-        resource = 'acs:oss:*:*:' + self.bucket_name + '/' + key_prefix + '*'
+    def request_upload(
+        self, file_name, description, commit_id, callback_url, slug, uploader
+    ):
+        key_prefix = self.key_prefix + "temp/upload/" + slug + "/" + uploader + "/"
+        resource = "acs:oss:*:*:" + self.bucket_name + "/" + key_prefix + "*"
         policy = {
-            "Version": "1", 
+            "Version": "1",
             "Statement": [
-                {
-                "Action": ["oss:PutObject"],
-                "Effect": "Allow", 
-                "Resource": [resource]
-                }
-            ]
+                {"Action": ["oss:PutObject"], "Effect": "Allow", "Resource": [resource]}
+            ],
         }
         policy_text = json.dumps(policy).strip()
-        clt = client.AcsClient(self.access_key_id, self.access_key_secret, self.region_id)
+        clt = client.AcsClient(
+            self.access_key_id, self.access_key_secret, self.region_id
+        )
         req = AssumeRoleRequest.AssumeRoleRequest()
-        req.set_accept_format('json')
+        req.set_accept_format("json")
         req.set_RoleArn(self.role_arn)
         req.set_RoleSessionName(uploader)
         req.set_DurationSeconds(3600)
@@ -161,18 +173,23 @@ class AliyunOssStorage(Storage):
         ret = {
             "callback": {
                 "callback_url": callback_url,
-                "callback_body": '{"object":${object},"description":"'+description+'","commit_id":"'+commit_id+'"}',
-                "callback_body_type": 'application/json'
+                "callback_body": '{"object":${object},"description":"'
+                + description
+                + '","commit_id":"'
+                + commit_id
+                + '"}',
+                "callback_body_type": "application/json",
             },
-            'access_key_id': token['Credentials']['AccessKeyId'],
-            'access_key_secret': token['Credentials']['AccessKeySecret'],
-            'security_token': token['Credentials']['SecurityToken'],
-            'endpoint': self.public_url,
-            'is_cname': False if self.public_url.endswith('.aliyuncs.com') else True,
-            'bucket': self.bucket_name,
-            'key_prefix': key_prefix
+            "access_key_id": token["Credentials"]["AccessKeyId"],
+            "access_key_secret": token["Credentials"]["AccessKeySecret"],
+            "security_token": token["Credentials"]["SecurityToken"],
+            "endpoint": self.public_url,
+            "is_cname": False if self.public_url.endswith(".aliyuncs.com") else True,
+            "bucket": self.bucket_name,
+            "key_prefix": key_prefix,
         }
-        return ret        
+        return ret
+
 
 @deconstructible
 class AliyunOssMediaStorage(AliyunOssStorage):

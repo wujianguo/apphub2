@@ -1,6 +1,8 @@
-
 class BaseClient:
-    def __init__(self, base_url=''):
+    def __init__(self, base_url=""):
+        pass
+
+    def login_or_create(self, username):
         pass
 
     def set_token(self, token):

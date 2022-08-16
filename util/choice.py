@@ -1,7 +1,9 @@
 import enum
-from django.utils.functional import Promise
+
 from django.db.models.enums import ChoicesMeta
+from django.utils.functional import Promise
 from rest_framework import serializers
+
 
 class CustomChoicesMeta(ChoicesMeta):
     """A metaclass for creating a enum choices."""
@@ -11,9 +13,9 @@ class CustomChoicesMeta(ChoicesMeta):
         for key in classdict._member_names:
             value = classdict[key]
             if (
-                isinstance(value, (list, tuple)) and
-                len(value) > 1 and
-                isinstance(value[-1], (Promise, str))
+                isinstance(value, (list, tuple))
+                and len(value) > 1
+                and isinstance(value[-1], (Promise, str))
             ):
                 *value, label = value
                 value = tuple(value)
@@ -28,19 +30,19 @@ class CustomChoicesMeta(ChoicesMeta):
             member._label_ = label
         return enum.unique(cls)
 
-class ChoiceField(serializers.ChoiceField):
 
+class ChoiceField(serializers.ChoiceField):
     def to_representation(self, obj):
-        if obj == '' and self.allow_blank:
+        if obj == "" and self.allow_blank:
             return obj
         return self._choices[obj]
 
     def to_internal_value(self, data):
         # To support inserts with the value
-        if data == '' and self.allow_blank:
-            return ''
+        if data == "" and self.allow_blank:
+            return ""
 
         for key, val in self._choices.items():
             if val == data:
                 return key
-        self.fail('invalid_choice', input=data)
+        self.fail("invalid_choice", input=data)

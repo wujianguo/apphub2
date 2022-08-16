@@ -1,0 +1,7 @@
+{% load i18n %}{% autoescape off %}Hello from {{ current_web_url }}!
+
+{% block content %}{% endblock %}
+
+Thank you for using {{ current_web_url }}!
+{{ current_web_url }}
+{% endautoescape %}

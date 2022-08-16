@@ -1,6 +1,8 @@
 Django>=4.0,<5.0
 djangorestframework
 requests
-coverage
 Pillow
 androguard
+dj-rest-auth[with_social]
+django-rest-auth
+oss2

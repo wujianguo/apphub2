@@ -1,13 +1,13 @@
+from django.conf import settings
 from django.shortcuts import render
 from django.views import View
-from django.conf import settings
+
 
 class SwaggerJsonView(View):
-    template_name = 'swagger.json'
+    template_name = "swagger.json"
+
     def get(self, request):
         url = settings.EXTERNAL_API_URL
         return render(
-            request,
-            self.template_name,
-            {'url': url},
-            content_type='application/json')
+            request, self.template_name, {"url": url}, content_type="application/json"
+        )

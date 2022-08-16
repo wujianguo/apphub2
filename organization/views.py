@@ -1,22 +1,28 @@
-from django.db import transaction
-from django.http import Http404
-from django.urls import reverse
-from django.db.models import Q
-from django.core.files import File
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from django.core.files import File
+from django.db import transaction
+from django.db.models import Q
+from django.http import Http404
+from django.urls import reverse
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from organization.models import OrganizationUser, Organization
-from organization.serializers import *
+
 from application.models import UniversalApp
-from util.visibility import VisibilityType
+from organization.models import Organization, OrganizationUser
+from organization.serializers import (OrganizationIconSerializer,
+                                      OrganizationSerializer,
+                                      OrganizationUserAddSerializer,
+                                      OrganizationUserSerializer,
+                                      UserOrganizationSerializer)
 from util.choice import ChoiceField
-from util.reserved import reserved_names
-from util.pagination import get_pagination_params
-from util.url import build_absolute_uri
 from util.image import generate_icon_image
+from util.pagination import get_pagination_params
+from util.reserved import reserved_names
+from util.role import Role
+from util.url import build_absolute_uri
+from util.visibility import VisibilityType
 
 UserModel = get_user_model()
 
@@ -33,11 +39,13 @@ def viewer_query(user, path):
         q2 = Q(org__visibility=VisibilityType.Public)
         return q1 & q2
 
+
 def check_org_view_permission(path, user):
     org_user = OrganizationUser.objects.filter(viewer_query(user, path))
     if not org_user.exists():
         raise Http404
     return org_user.first().org
+
 
 def check_org_manager_permission(path, user):
     try:
@@ -53,6 +61,7 @@ def check_org_manager_permission(path, user):
         except Organization.DoesNotExist:
             raise Http404
 
+
 def check_org_owner_permission(path, user):
     try:
         user_org = OrganizationUser.objects.get(org__path=path, user=user)
@@ -66,6 +75,7 @@ def check_org_owner_permission(path, user):
             raise PermissionDenied
         except Organization.DoesNotExist:
             raise Http404
+
 
 class OrganizationList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -82,21 +92,29 @@ class OrganizationList(APIView):
             # todo
             allow_visibility = [VisibilityType.Public, VisibilityType.Internal]
             orgs = Organization.objects.filter(visibility__in=allow_visibility)
-            user_orgs = OrganizationUser.objects.filter(user=request.user).prefetch_related('org')
+            user_orgs = OrganizationUser.objects.filter(
+                user=request.user
+            ).prefetch_related("org")
+
             def not_in_user_orgs(org):
-                return len(list(filter(lambda x: x.org.id==org.id, user_orgs))) == 0
+                return len(list(filter(lambda x: x.org.id == org.id, user_orgs))) == 0
+
             orgs = filter(not_in_user_orgs, orgs)
             data = OrganizationSerializer(orgs, many=True).data
             user_orgs_data = UserOrganizationSerializer(user_orgs, many=True).data
             data.extend(user_orgs_data)
-            headers = {'X-Total-Count': len(data)}
-            return Response(data[(page - 1) * per_page: page * per_page], headers=headers)
+            headers = {"X-Total-Count": len(data)}
+            return Response(
+                data[(page - 1) * per_page : page * per_page], headers=headers
+            )
         else:
             query = Organization.objects.filter(visibility=VisibilityType.Public)
             count = query.count()
-            orgs = query.order_by('create_time')[(page - 1) * per_page: page * per_page]
+            orgs = query.order_by("create_time")[
+                (page - 1) * per_page : page * per_page
+            ]
             serializer = OrganizationSerializer(orgs, many=True)
-            headers = {'X-Total-Count': count}
+            headers = {"X-Total-Count": count}
             return Response(serializer.data, headers=headers)
 
     @transaction.atomic
@@ -104,23 +122,42 @@ class OrganizationList(APIView):
         serializer = OrganizationSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        path = serializer.validated_data['path']
+        path = serializer.validated_data["path"]
         if path in reserved_names:
             return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
         if Organization.objects.filter(path=path).exists():
             return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
         instance = serializer.save(owner=request.user)
-        file = generate_icon_image(serializer.validated_data['name'])
-        instance.icon_file.save('icon.png', File(file.file))
+        file = generate_icon_image(serializer.validated_data["name"])
+        instance.icon_file.save("icon.png", File(file.file))
 
-        org_user = OrganizationUser.objects.create(org=instance, user=request.user, role=Role.Owner)
+        org_user = OrganizationUser.objects.create(
+            org=instance, user=request.user, role=Role.Owner
+        )
         data = serializer.data
-        data['role'] = ChoiceField(choices=Role.choices).to_representation(org_user.role)
+        data["role"] = ChoiceField(choices=Role.choices).to_representation(
+            org_user.role
+        )
         response = Response(data, status=status.HTTP_201_CREATED)
-        location = reverse('org-detail', args=(path,))
-        response['Location'] = build_absolute_uri(location)
+        location = reverse("org-detail", args=(path,))
+        response["Location"] = build_absolute_uri(location)
         return response
+
+
+class AuthenticatedUserOrganizationList(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        username = request.user.username
+        page, per_page = get_pagination_params(request)
+        orgs = OrganizationUser.objects.filter(
+            user=request.user, org__owner__username=username
+        ).prefetch_related("org")
+        data = UserOrganizationSerializer(orgs, many=True).data
+        headers = {"X-Total-Count": len(data)}
+        return Response(data[(page - 1) * per_page : page * per_page], headers=headers)
+
 
 class OrganizationDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -128,7 +165,9 @@ class OrganizationDetail(APIView):
     def get(self, request, path):
         if request.user.is_authenticated:
             try:
-                user_org = OrganizationUser.objects.get(org__path=path, user=request.user)
+                user_org = OrganizationUser.objects.get(
+                    org__path=path, user=request.user
+                )
                 serializer = UserOrganizationSerializer(user_org)
                 return Response(serializer.data)
             except OrganizationUser.DoesNotExist:
@@ -146,19 +185,28 @@ class OrganizationDetail(APIView):
 
     def put(self, request, path):
         user_org = check_org_manager_permission(path, request.user)
-        serializer = OrganizationSerializer(user_org.org, data=request.data, partial=True)
+        serializer = OrganizationSerializer(
+            user_org.org, data=request.data, partial=True
+        )
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        if serializer.validated_data.get('path', None) and path != serializer.validated_data['path']:
-            if serializer.validated_data['path'] in reserved_names:
+
+        if (
+            serializer.validated_data.get("path", None)
+            and path != serializer.validated_data["path"]
+        ):
+            if serializer.validated_data["path"] in reserved_names:
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-            if Organization.objects.filter(path=serializer.validated_data['path']).exists():
+            if Organization.objects.filter(
+                path=serializer.validated_data["path"]
+            ).exists():
                 return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
         serializer.save()
         data = serializer.data
-        data['role'] = ChoiceField(choices=Role.choices).to_representation(user_org.role)
+        data["role"] = ChoiceField(choices=Role.choices).to_representation(
+            user_org.role
+        )
         return Response(data)
 
     def delete(self, request, path):
@@ -168,6 +216,7 @@ class OrganizationDetail(APIView):
         user_org.org.delete()
         # todo: check whether org has deleted
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class OrganizationIcon(APIView):
     def post(self, request, path):
@@ -180,8 +229,9 @@ class OrganizationIcon(APIView):
 
         # todo response no content
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        response['Location'] = instance.icon_file.url
+        response["Location"] = instance.icon_file.url
         return response
+
 
 class OrganizationUserList(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -197,8 +247,8 @@ class OrganizationUserList(APIView):
         serializer = OrganizationUserAddSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        username = serializer.validated_data['username']
-        role = serializer.validated_data['role']
+        username = serializer.validated_data["username"]
+        role = serializer.validated_data["role"]
         if role == Role.Owner:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -209,12 +259,15 @@ class OrganizationUserList(APIView):
                 user = UserModel.objects.get(username=username)
             except UserModel.DoesNotExist:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            instance = OrganizationUser.objects.create(org=user_org.org, role=role, user=user)
+            instance = OrganizationUser.objects.create(
+                org=user_org.org, role=role, user=user
+            )
             serializer = OrganizationUserSerializer(instance)
             response = Response(serializer.data, status=status.HTTP_201_CREATED)
-            location = reverse('org-user', args=(path, username))
-            response['Location'] = build_absolute_uri(location)
+            location = reverse("org-user", args=(path, username))
+            response["Location"] = build_absolute_uri(location)
             return response
+
 
 class OrganizationUserDetail(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -237,7 +290,7 @@ class OrganizationUserDetail(APIView):
         serializer = OrganizationUserSerializer(org_user, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        role = serializer.validated_data.get('role', None)
+        role = serializer.validated_data.get("role", None)
         if role == Role.Owner or user_org.org.owner.username == username:
             raise PermissionDenied
         serializer.save()

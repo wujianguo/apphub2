@@ -11,8 +11,27 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
-from urllib.parse import urlparse
 from pathlib import Path
+from urllib.parse import urlparse
+
+from util.reserved import reserved_names
+
+try:
+    import apphub.local_settings
+except:  # noqa: E722
+    pass
+
+
+def get_env_value(key, default=None):
+    # value = os.environ.get('APPHUB_' + key, None)
+    value = os.environ.get(key, None)
+    if value is not None:
+        return value
+    try:
+        return getattr(apphub.local_settings, key, default)
+    except:  # noqa: E722
+        return default
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,15 +41,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('APPHUB_SETTINGS_SECRET_KEY', default='django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e')
+SECRET_KEY = get_env_value(
+    "SECRET_KEY",
+    default="django-insecure-@&gp$u=3+j%te3+^d)4**8)csv5u^3u$(6g&$m8&t*ao61hc$e",
+)
 # gp$u=3+j%te3+
 # **8)csv5u^3
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('APPHUB_SETTINGS_DEBUG_MODE', default=True)
+DEBUG = get_env_value("DEBUG_MODE", default=False)
 
-EXTERNAL_WEB_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_WEB_URL', default='')
+EXTERNAL_WEB_URL = get_env_value("EXTERNAL_WEB_URL", default="http://localhost:8000")
 
-EXTERNAL_API_URL = os.environ.get('APPHUB_SETTINGS_EXTERNAL_API_URL', default='')
+EXTERNAL_API_URL = get_env_value("EXTERNAL_API_URL", default=EXTERNAL_WEB_URL + "/api")
 if EXTERNAL_API_URL:
     ALLOWED_HOSTS = [urlparse(EXTERNAL_API_URL).hostname]
 else:
@@ -43,164 +65,250 @@ if API_URL_PREFIX and len(API_URL_PREFIX) > 0:
 # Application definition
 
 INSTALLED_APPS = [
-    'documentation.apps.DocumentationConfig',
-    'user.apps.UserConfig',
-    'organization.apps.OrganizationConfig',
-    'application.apps.ApplicationConfig',
-    'distribute.apps.DistributeConfig',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'rest_framework.authtoken',
+    "user.apps.UserConfig",
+    "organization.apps.OrganizationConfig",
+    "application.apps.ApplicationConfig",
+    "distribute.apps.DistributeConfig",
+    "system.apps.SystemConfig",
+    "documentation.apps.DocumentationConfig",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.sites",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'apphub.urls'
+ROOT_URLCONF = "apphub.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'apphub.wsgi.application'
+WSGI_APPLICATION = "apphub.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES_ENGINE =  os.environ.get('APPHUB_SETTINGS_DEFAULT_SDATABASES_ENGINE', default='django.db.backends.sqlite3')
+DATABASES_ENGINE = get_env_value(
+    "DEFAULT_SDATABASES_ENGINE", default="django.db.backends.sqlite3"
+)
 DATABASES = {
-    'default': {
-        'ENGINE': DATABASES_ENGINE,
+    "default": {
+        "ENGINE": DATABASES_ENGINE,
     }
 }
-if DATABASES_ENGINE == 'django.db.backends.sqlite3':
-    DATABASES['default']['NAME'] = os.environ.get('APPHUB_SETTINGS_DATABASE_NAME', default=BASE_DIR / 'db.sqlite3')
-elif DATABASES_ENGINE == 'django.db.backends.mysql':
-    DATABASES['default']['NAME'] = os.environ.get("APPHUB_SETTINGS_DATABASE_NAME")
-    DATABASES['default']['HOST'] = os.environ.get("APPHUB_SETTINGS_DATABASE_HOST")
-    DATABASES['default']['PORT'] = os.environ.get("APPHUB_SETTINGS_DATABASE_PORT")
-    DATABASES['default']['USER'] = os.environ.get("APPHUB_SETTINGS_DATABASE_USER")
-    DATABASES['default']['PASSWORD'] = os.environ.get("APPHUB_SETTINGS_DATABASE_PASSWORD")
+if DATABASES_ENGINE == "django.db.backends.sqlite3":
+    DATABASES["default"]["NAME"] = get_env_value(
+        "DATABASE_NAME", default=BASE_DIR / "db.sqlite3"
+    )
+else:
+    DATABASES["default"]["NAME"] = get_env_value("DATABASE_NAME")
+    DATABASES["default"]["HOST"] = get_env_value("DATABASE_HOST")
+    DATABASES["default"]["PORT"] = get_env_value("DATABASE_PORT")
+    DATABASES["default"]["USER"] = get_env_value("DATABASE_USER")
+    DATABASES["default"]["PASSWORD"] = get_env_value("DATABASE_PASSWORD")
+
+# Email
+EMAIL_HOST = get_env_value("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(get_env_value("EMAIL_PORT", 25))
+EMAIL_USE_SSL = get_env_value("EMAIL_USE_SSL", False)
+EMAIL_HOST_USER = get_env_value("EMAIL_HOST_USER", "")
+DEFAULT_FROM_EMAIL = get_env_value("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+EMAIL_HOST_PASSWORD = get_env_value("EMAIL_HOST_PASSWORD", "")
+EMAIL_SUBJECT_PREFIX = "[" + get_env_value("APP_NAME", "AppHub") + "]"
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # noqa: E501
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
-DEFAULT_RENDERER_CLASSES = (
-    'rest_framework.renderers.JSONRenderer',
-)
+DEFAULT_RENDERER_CLASSES = ("rest_framework.renderers.JSONRenderer",)
 
 if DEBUG:
     DEFAULT_RENDERER_CLASSES = DEFAULT_RENDERER_CLASSES + (
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        "rest_framework.renderers.BrowsableAPIRenderer",
     )
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'user.authentication.BearerTokenAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "user.authentication.BearerTokenAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
-    'DEFAULT_RENDERER_CLASSES': DEFAULT_RENDERER_CLASSES,
-    'EXCEPTION_HANDLER': 'util.exception.custom_exception_handler'
+    "DEFAULT_RENDERER_CLASSES": DEFAULT_RENDERER_CLASSES,
+    "EXCEPTION_HANDLER": "util.exception.custom_exception_handler",
 }
+
+if EXTERNAL_WEB_URL:
+    CSRF_COOKIE_DOMAIN = urlparse(EXTERNAL_WEB_URL).hostname
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = get_env_value("LANGUAGE_CODE", default="en-us")
 
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = get_env_value("TIME_ZONE", default="America/Chicago")
 USE_I18N = True
 
 USE_TZ = True
 
-FONT_FILE = os.environ.get('APPHUB_SETTINGS_FONT_FILE', 'PingFang.ttc')
+FONT_FILE = get_env_value("FONT_FILE", "PingFang.ttc")
 
-STATICFILES_STORAGE = os.environ.get('APPHUB_SETTINGS_STATICFILES_STORAGE', 'django.contrib.staticfiles.storage.StaticFilesStorage')
-# DEFAULT_FILE_STORAGE = os.environ.get('APPHUB_SETTINGS_DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage')
-DEFAULT_FILE_STORAGE = os.environ.get('APPHUB_SETTINGS_DEFAULT_FILE_STORAGE', 'storage.NginxFileStorage.NginxPrivateFileStorage')
+STATICFILES_STORAGE = get_env_value(
+    "STATICFILES_STORAGE", "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
+# DEFAULT_FILE_STORAGE = get_env_value('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage') # noqa: E501
+DEFAULT_FILE_STORAGE = get_env_value(
+    "DEFAULT_FILE_STORAGE", "storage.NginxFileStorage.NginxPrivateFileStorage"
+)
 
 
-if STATICFILES_STORAGE == 'storage.AliyunOssStorage.AliyunOssStaticStorage' or DEFAULT_FILE_STORAGE == 'storage.AliyunOssStorage.AliyunOssMediaStorage':
-    ALIYUN_OSS_ACCESS_KEY_ID = os.environ.get('ALIYUN_OSS_ACCESS_KEY_ID')
-    ALIYUN_OSS_ACCESS_KEY_SECRET = os.environ.get('ALIYUN_OSS_ACCESS_KEY_SECRET')
-    ALIYUN_OSS_BUCKET_NAME = os.environ.get('ALIYUN_OSS_BUCKET_NAME')
-    ALIYUN_OSS_ENDPOINT =  os.environ.get('ALIYUN_OSS_ENDPOINT')
-    ALIYUN_OSS_PUBLIC_URL =  os.environ.get('ALIYUN_OSS_PUBLIC_URL', ALIYUN_OSS_ENDPOINT)
-    ALIYUN_OSS_KEY_PREFIX = os.environ.get('ALIYUN_OSS_KEY_PREFIX', '')
-    ALIYUN_OSS_ROLE_ARN = os.environ.get('ALIYUN_OSS_ROLE_ARN')
-    ALIYUN_OSS_REGION_ID = os.environ.get('ALIYUN_OSS_REGION_ID')
+if (
+    STATICFILES_STORAGE == "storage.AliyunOssStorage.AliyunOssStaticStorage"
+    or DEFAULT_FILE_STORAGE == "storage.AliyunOssStorage.AliyunOssMediaStorage"
+):
+    ALIYUN_OSS_ACCESS_KEY_ID = get_env_value("ALIYUN_OSS_ACCESS_KEY_ID")
+    ALIYUN_OSS_ACCESS_KEY_SECRET = get_env_value("ALIYUN_OSS_ACCESS_KEY_SECRET")
+    ALIYUN_OSS_BUCKET_NAME = get_env_value("ALIYUN_OSS_BUCKET_NAME")
+    ALIYUN_OSS_ENDPOINT = get_env_value("ALIYUN_OSS_ENDPOINT")
+    ALIYUN_OSS_PUBLIC_URL = get_env_value("ALIYUN_OSS_PUBLIC_URL", ALIYUN_OSS_ENDPOINT)
+    ALIYUN_OSS_KEY_PREFIX = get_env_value("ALIYUN_OSS_KEY_PREFIX", "")
+    ALIYUN_OSS_ROLE_ARN = get_env_value("ALIYUN_OSS_ROLE_ARN")
+    ALIYUN_OSS_REGION_ID = get_env_value("ALIYUN_OSS_REGION_ID")
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
-STATIC_ROOT = os.environ.get('APPHUB_SETTINGS_STATIC_ROOT', default='var/static/')
-STATIC_URL = os.environ.get('APPHUB_SETTINGS_STATIC_URL', default=EXTERNAL_WEB_URL + '/static/')
+STATIC_ROOT = get_env_value("STATIC_ROOT", default="var/static/")
+STATIC_URL = get_env_value("STATIC_URL", default=EXTERNAL_WEB_URL + "/static/")
 
-MEDIA_ROOT = os.environ.get('APPHUB_SETTINGS_MEDIA_ROOT', default='var/media/')
-MEDIA_URL = os.environ.get('APPHUB_SETTINGS_MEDIA_URL', default=EXTERNAL_WEB_URL + '/media/')
+MEDIA_ROOT = get_env_value("MEDIA_ROOT", default="var/media/")
+MEDIA_URL = get_env_value("MEDIA_URL", default=EXTERNAL_WEB_URL + "/media/")
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # User
-AUTH_USER_MODEL = "user.User"
-AUTHENTICATION_BACKENDS = ["user.backends.EmailUsersModelBackend"]
+SOCIAL_ACCOUNT = get_env_value("SOCIAL_ACCOUNT", default="")
+if SOCIAL_ACCOUNT:
+    SOCIAL_ACCOUNT_LIST = SOCIAL_ACCOUNT.split(",")
+else:
+    SOCIAL_ACCOUNT_LIST = []
+if SOCIAL_ACCOUNT_LIST:
+    SOCIALACCOUNT_PROVIDERS = {
+        "custom_feishu": {
+            "display_name": get_env_value("FEISHU_DISPLAY_NAME", "feishu"),
+            "APP": {
+                "client_id": get_env_value("FEISHU_APP_ID", ""),
+                "secret": get_env_value("FEISHU_APP_SECRET", ""),
+            },
+        },
+        "custom_slack": {
+            "display_name": get_env_value("SLACK_DISPLAY_NAME", "slack"),
+            "SCOPE": ["identity.basic", "openid", "email", "profile"],
+            "APP": {
+                "client_id": get_env_value("SLACK_CLIENT_ID", ""),
+                "secret": get_env_value("SLACK_CLIENT_SECRET", ""),
+            },
+        },
+        "custom_dingtalk": {
+            "display_name": get_env_value("DINGTALK_DISPLAY_NAME", "dingtalk"),
+            "SCOPE": ["openid"],
+            "APP": {
+                "client_id": get_env_value("DING_TALK_APP_KEY", ""),
+                "secret": get_env_value("DING_TALK_APP_SECRET", ""),
+            },
+        },
+    }
 
-CODE_EXPIRE_SECONDS = 2 * 60 * 60
+ACCOUNT_ADAPTER = "user.adapter.AppHubAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "user.adapter.AppHubSoialAccountAdapter"
+REST_AUTH_SERIALIZERS = {
+    "USER_DETAILS_SERIALIZER": "user.serializers.UserSerializer",
+    "PASSWORD_CHANGE_SERIALIZER": "user.serializers.UserPasswordChangeSerializer",
+    "PASSWORD_RESET_SERIALIZER": "user.serializers.UserPasswordResetSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "user.serializers.UserPasswordResetConfirmSerializer",  # noqa: E501
+}
+REST_AUTH_REGISTER_SERIALIZERS = {
+    "REGISTER_SERIALIZER": "user.serializers.UserRegisterSerializer"
+}
+OLD_PASSWORD_FIELD_ENABLED = True
+LOGOUT_ON_PASSWORD_CHANGE = True
+ENABLE_EMAIL_ACCOUNT = get_env_value("ENABLE_EMAIL_ACCOUNT", True)
+if ENABLE_EMAIL_ACCOUNT:
+    ACCOUNT_EMAIL_REQUIRED = True
+    ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+    ACCOUNT_EMAIL_DOMAIN = get_env_value("ACCOUNT_EMAIL_DOMAIN", "")
+    ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[" + get_env_value("APP_NAME", "AppHub") + "]"
+
+ACCOUNT_USERNAME_BLACKLIST = reserved_names
+if EXTERNAL_WEB_URL.startswith("https://"):
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+AUTH_USER_MODEL = "user.User"
+AUTHENTICATION_BACKENDS = ["allauth.account.auth_backends.AuthenticationBackend"]
+
 
 SECURE_HSTS_SECONDS = 31536000
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 CSRF_COOKIE_SECURE = True
-if EXTERNAL_WEB_URL.startswith('https://') and not DEBUG:
+if EXTERNAL_WEB_URL.startswith("https://") and not DEBUG:
     SECURE_SSL_REDIRECT = True

@@ -1,6 +1,4 @@
-
 class AppParser:
-
     @staticmethod
     def can_parse(ext, os=None):
         return False
@@ -14,23 +12,23 @@ class AppParser:
 
     @property
     def display_name(self):
-        return ''
+        return ""
 
     @property
     def version(self):
-        return ''
+        return ""
 
     @property
     def short_version(self):
-        return ''
+        return ""
 
     @property
     def minimum_os_version(self):
-        return ''
+        return ""
 
     @property
     def bundle_identifier(self):
-        return ''
+        return ""
 
     @property
     def app_icon(self):

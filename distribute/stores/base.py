@@ -1,21 +1,25 @@
 from django.db import models
 
+
 class StoreType(models.IntegerChoices):
     RawLink = 1
     AppStore = 2
     GooglePlay = 3
     MicrosoftStore = 4
     Vivo = 5
+    Huawei = 6
+    Xiaomi = 7
+    Yingyongbao = 8
+
 
 class AppPackage:
-
     def __init__(self):
-        self._package_download_url = ''
-        self._fingerprint = ''
-        self._bundle_identifier = ''
+        self._package_download_url = ""
+        self._fingerprint = ""
+        self._bundle_identifier = ""
         self._version = 0
-        self._short_version = ''
-        self._release_notes = ''
+        self._short_version = ""
+        self._release_notes = ""
 
     @property
     def package_download_url(self):
@@ -76,18 +80,18 @@ class StoreBase:
 
     @staticmethod
     def name():
-        return ''
+        return ""
 
     @staticmethod
     def display_name():
-        return ''
+        return ""
 
     @staticmethod
     def icon():
-        return ''
+        return ""
 
     def channel(self):
-        return ''
+        return ""
 
     def submit(self, package):
         pass
@@ -95,5 +99,5 @@ class StoreBase:
     def submit_result(self, submit_id):
         pass
 
-    def current_version(self):
-        return ''
+    def store_current(self):
+        return ""

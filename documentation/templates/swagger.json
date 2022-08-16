@@ -22,6 +22,9 @@
       "name": "user"
     },
     {
+      "name": "integration"
+    },
+    {
       "name": "organization"
     },
     {
@@ -31,7 +34,7 @@
       "name": "distribute"
     },
     {
-      "name": "workflow"
+      "name": "store"
     }
   ],
   "paths": {
@@ -42,7 +45,7 @@
         ],
         "summary": "Get user auth config",
         "responses": {
-          "201": {
+          "200": {
             "description": "user auth configuration",
             "content": {
               "application/json": {
@@ -72,20 +75,73 @@
         },
         "responses": {
           "201": {
-            "description": "user registered",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserLoginResponse"
+            "description": "Verification e-mail sent."
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          }
+        }
+      }
+    },
+    "/user/register/resend_email": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Resend register email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification e-mail sent."
           },
           "400": {
             "description": "invalid input, object invalid"
           },
-          "409": {
-            "description": "an existing username already exists"
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/user/register/verify_email": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Verify register email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
           }
         }
       }
@@ -134,7 +190,7 @@
         ],
         "summary": "Logout",
         "responses": {
-          "204": {
+          "200": {
             "description": "Logout success"
           },
           "401": {
@@ -249,7 +305,7 @@
                 },
                 "description": "my avatar"
               }
-            }        
+            }
           },
           "400": {
             "description": "invalid input, object invalid"
@@ -295,70 +351,7 @@
         }
       }
     },
-    "/user/email/request_verify": {
-      "post": {
-        "tags": [
-          "user"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Request verify email",
-        "responses": {
-          "204": {
-            "description": "verfiy email sent"
-          },
-          "400": {
-            "description": "invalid input, object invalid"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/user/email/verify": {
-      "post": {
-        "tags": [
-          "user"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Verify email",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "code": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Email verified"
-          },
-          "400": {
-            "description": "invalid input, object invalid"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/user/password/request_reset": {
+    "/user/password/reset": {
       "post": {
         "tags": [
           "user"
@@ -380,7 +373,7 @@
           }
         },
         "responses": {
-          "204": {
+          "200": {
             "description": "Reset password email sent"
           },
           "400": {
@@ -389,23 +382,28 @@
         }
       }
     },
-    "/user/password/reset": {
+    "/user/password/reset/confirm": {
       "post": {
         "tags": [
           "user"
         ],
-        "summary": "Reset password",
+        "summary": "Reset password confirm",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "code": {
-                    "type": "string",
-                    "format": "uuid"
+                  "username": {
+                    "type": "string"
                   },
-                  "password": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "new_password1": {
+                    "type": "string"
+                  },
+                  "new_password2": {
                     "type": "string"
                   }
                 }
@@ -414,7 +412,7 @@
           }
         },
         "responses": {
-          "204": {
+          "200": {
             "description": "Reset password"
           },
           "400": {
@@ -440,10 +438,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "password": {
+                  "old_password": {
                     "type": "string"
                   },
-                  "new_password": {
+                  "new_password1": {
+                    "type": "string"
+                  },
+                  "new_password2": {
                     "type": "string"
                   }
                 }
@@ -452,7 +453,7 @@
           }
         },
         "responses": {
-          "204": {
+          "200": {
             "description": "Change password"
           },
           "400": {
@@ -460,6 +461,86 @@
           },
           "401": {
             "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/user/{provider}/login": {
+      "get": {
+        "tags": [
+          "integration"
+        ],
+        "summary": "Get auth url",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "feishu", "slack", "dingtalk", "wecom"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get auth url",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialAuthUrlResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "integration"
+        ],
+        "summary": "login",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "feishu", "slack", "dingtalk"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "user login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialLoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
           }
         }
       }
@@ -588,6 +669,83 @@
           },
           "409": {
             "description": "an existing item already exists"
+          }
+        }
+      }
+    },
+    "/user/orgs": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "organization"
+        ],
+        "summary": "List organizations for the authenticated user",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default 1).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of items to list per page (default 10, max 100).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "The If-Modified-Since request HTTP header makes the request conditional, the server sends back the requested resource, with a 200 status, only if it has been last modified after the given date. If the resource has not been modified since, the response is a 304 without any body. <a>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since</a>",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Wed, 21 Oct 2021 07:28:00 GMT"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "organization list",
+            "headers": {
+              "X-Total-Count": {
+                "description": "The total number of items.",
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified."
           }
         }
       }
@@ -6192,6 +6350,182 @@
           }
         }
       }
+    },
+    "/stores/appstore/{country_code_alpha2}/{appstore_app_id}": {
+      "get": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Get appstore app info",
+        "parameters": [
+          {
+            "name": "country_code_alpha2",
+            "in": "path",
+            "description": "ISO 3166-1 alpha-2 https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "appstore_app_id",
+            "in": "path",
+            "description": "appstore_app_id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "appstore app info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCurrent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/vivo/{vivo_store_app_id}": {
+      "get": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Get vivo store app info",
+        "parameters": [
+          {
+            "name": "vivo_store_app_id",
+            "in": "path",
+            "description": "vivo_store_app_id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "app info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCurrent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/huawei": {
+      "get": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Get huawei store app info",
+        "parameters": [
+          {
+            "name": "store_url",
+            "in": "query",
+            "description": "store_url",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "app info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCurrent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/xiaomi/{xiaomi_store_app_id}": {
+      "get": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Get xiaomi store app info",
+        "parameters": [
+          {
+            "name": "xiaomi_store_app_id",
+            "in": "path",
+            "description": "xiaomi_store_app_id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "app info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCurrent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/yingyongbao": {
+      "get": {
+        "tags": [
+          "store"
+        ],
+        "summary": "Get yingyongbao store app info",
+        "parameters": [
+          {
+            "name": "bundle_identifier",
+            "in": "query",
+            "description": "bundle_identifier",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "app info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCurrent"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6229,36 +6563,53 @@
       "UserAuthConfigResponse": {
         "type": "object",
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "email",
-              "ldap",
-              "slack",
-              "microsoft_teams",
-              "dingtalk",
-              "github",
-              "gitlab",
-              "work_weixin",
-              "feishu"
-            ]
+          "email": {
+            "type": "object",
+            "properties": {
+              "enable": {
+                "type": "boolean"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "ldap": {
+                "type": "boolean"
+              }
+            }
           },
-          "email_domain": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "logo": {
-            "type": "string",
-            "format": "url"
-          },
-          "auth_url": {
-            "type": "string",
-            "format": "url"
+          "social": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "slack",
+                    "microsoft_teams",
+                    "dingtalk",
+                    "github",
+                    "gitlab",
+                    "work_weixin",
+                    "feishu"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "logo": {
+                  "type": "string",
+                  "format": "url"
+                },
+                "auth_url": {
+                  "type": "string",
+                  "format": "url"
+                }
+              }
+            }
           }
         }
       },
@@ -6275,7 +6626,10 @@
           "last_name": {
             "type": "string"
           },
-          "password": {
+          "password1": {
+            "type": "string"
+          },
+          "password2": {
             "type": "string"
           },
           "email": {
@@ -6287,10 +6641,12 @@
       "UserLoginRequest": {
         "type": "object",
         "properties": {
-          "account": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
             "type": "string",
-            "required": true,
-            "description": "username/email"
+            "format": "email"
           },
           "password": {
             "type": "string",
@@ -6325,6 +6681,32 @@
             "type": "string"
           }
         }
+      },
+      "SocialAuthUrlResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "url"
+          }
+        }
+      },
+      "SocialLoginRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "access_token": {
+            "type": "string"
+          },
+          "id_token": {
+            "type": "string"
+          }
+        }
+      },
+      "SocialLoginResponse": {
+
       },
       "UserResponse": {
         "type": "object",
@@ -7137,6 +7519,21 @@
               "Developer",
               "Tester"
             ]
+          }
+        }
+      },
+      "StoreCurrent": {
+        "type": "object",
+        "properties": {
+          "icon": {
+            "type": "string",
+            "format": "url"
+          },
+          "name": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
           }
         }
       },

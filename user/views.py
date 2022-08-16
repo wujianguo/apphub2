@@ -1,176 +1,86 @@
-import datetime
-from django.db import transaction
-from django.http import Http404
-from django.utils import timezone
+import shutil
+import tempfile
+
+import requests
+from allauth.account.signals import user_signed_up
+from dj_rest_auth.views import LoginView, LogoutView
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.core.files import File
-from rest_framework.views import APIView
+from django.dispatch import receiver
+from django.http import Http404
 from rest_framework import permissions, status
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
-from user.models import EmailCode
-from user.serializers import *
-from util.reserved import reserved_names
+from rest_framework.views import APIView
+
+from user.serializers import (UserAvatarSerializer, UserSerializer,
+                              UserUpdateSerializer)
 from util.image import generate_icon_image
-from util.url import build_absolute_uri
+from util.url import build_absolute_uri, build_static_uri
 
 UserModel = get_user_model()
 
-@api_view(['GET'])
+
+@receiver(user_signed_up)
+def handle_user_signed_up(sender, **kwargs):
+    user = kwargs.get("user")
+    sociallogin = kwargs.get("sociallogin", None)
+    if sociallogin:
+        avatar_url = sociallogin.account.get_avatar_url()
+        if avatar_url:
+            with requests.get(avatar_url, stream=True) as f:
+                tmpf = tempfile.TemporaryFile()
+                shutil.copyfileobj(f.raw, tmpf)
+                tmpf.seek(0)
+                user.avatar.save("avatar.png", File(tmpf))
+                tmpf.close()
+                return
+
+    file = generate_icon_image(user.first_name if user.first_name else user.username)
+    user.avatar.save("avatar.png", File(file.file))
+
+
+@api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def auth_config(request):
-    data = {
-
-    }
+    data = {}
+    if settings.ENABLE_EMAIL_ACCOUNT:
+        data["email"] = {"enable": True}
+        if settings.ACCOUNT_EMAIL_DOMAIN:
+            data["email"]["domain"] = settings.ACCOUNT_EMAIL_DOMAIN
+    if settings.SOCIAL_ACCOUNT_LIST:
+        social = []
+        for item in settings.SOCIAL_ACCOUNT_LIST:
+            key = "custom_" + item
+            app = settings.SOCIALACCOUNT_PROVIDERS.get(key, None)
+            if not app:
+                continue
+            social.append(
+                {
+                    "type": item,
+                    "name": app.get("display_name", item),
+                    "logo": build_static_uri("integrations/" + item + ".png"),
+                    "auth_url": settings.EXTERNAL_API_URL + "/user/" + item + "/login",
+                }
+            )
+        data["social"] = social
     return Response(data)
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-@transaction.atomic
-def register(request):
-    serializer = UserRegisterSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    username = serializer.validated_data.get('username')
-    if username in reserved_names:
-        return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-    password = serializer.validated_data.get('password')
-    email = serializer.validated_data.get('email', '')
-    first_name = serializer.validated_data.get('first_name', '')
-    last_name = serializer.validated_data.get('last_name', '')
-    if email and UserModel.objects.filter(email=email, email_verified=True).exists():
-        return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-    user = UserModel.objects.create_user(username=username)
-    if email:
-        user.email = email
-    if first_name:
-        user.first_name = first_name
-    if last_name:
-        user.last_name = last_name
-    user.set_password(password)
-    user.save()
-    file = generate_icon_image(first_name if first_name else username)
-    user.avatar.save('avatar.png', File(file.file))
-    token, _ = Token.objects.get_or_create(user=user)
-    response_serializer = UserSerializer(user)
-    response_data = response_serializer.data
-    response_data['token'] = token.key
-    return Response(response_data, status=status.HTTP_201_CREATED)
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def login(request):
-    serializer = UserLoginSerializer(data=request.data)
-    if not serializer.is_valid():
-        raise ValidationError(serializer.errors)
-    user = serializer.validated_data['user']
-    token, _ = Token.objects.get_or_create(user=user)
-    response_serializer = UserSerializer(user)
-    response_data = response_serializer.data
-    response_data['token'] = token.key
-    return Response(response_data, status=status.HTTP_200_OK)
+class AppHubLoginView(LoginView):
+    def get_response(self):
+        if self.token:
+            response_serializer = UserSerializer(self.user)
+            response_data = response_serializer.data
+            response_data["token"] = self.token.key
+            return Response(response_data, status=status.HTTP_200_OK)
+        return super().get_response()
 
-@api_view(['DELETE'])
-@permission_classes([permissions.IsAuthenticated])
-def logout_user(request):
-    request.user.auth_token.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def request_verify_email(request):
-    if not request.user.email:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    email_code = EmailCode.objects.create(email=request.user.email, type=EmailCode.EmailCodeType.VerifyEmail)
-    message = str(email_code.code)
-    send_mail('verify your email', message, None, [request.user.email])
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def verify_email(request):
-    serializer = VerifyEmailSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        email_code = EmailCode.objects.get(
-            email=request.user.email,
-            code=serializer.validated_data['code'],
-            type=EmailCode.EmailCodeType.VerifyEmail,
-            valid=True)
-    except EmailCode.DoesNotExist:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    expire_time = email_code.create_time + datetime.timedelta(seconds=settings.CODE_EXPIRE_SECONDS)
-    if timezone.now() > expire_time:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    request.user.email_verified = True
-    request.user.save()
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def request_reset_password(request):
-    serializer = RequestResetPasswordSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    email = serializer.validated_data['email']
-    try:
-        UserModel.objects.get(email=email, email_verified=True)
-    except UserModel.DoesNotExist:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    email_code = EmailCode.objects.create(email=email, type=EmailCode.EmailCodeType.ResetPassword)
-    message = str(email_code.code)
-    send_mail('reset password', message, None, [email])
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def reset_password(request):
-    serializer = ResetPasswordSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        email_code = EmailCode.objects.get(
-            code=serializer.validated_data['code'], 
-            type=EmailCode.EmailCodeType.ResetPassword,
-            valid=True)
-    except EmailCode.DoesNotExist:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    expire_time = email_code.create_time + datetime.timedelta(seconds=settings.CODE_EXPIRE_SECONDS)
-    if timezone.now() > expire_time:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    email = email_code.email
-    try:
-        user = UserModel.objects.get(email=email, email_verified=True)
-    except UserModel.DoesNotExist:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    user.auth_token.delete()
-    user.set_password(serializer.validated_data['password'])
-    user.save()
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def change_password(request):
-    serializer = ChangePasswordSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    user = authenticate(username=request.user.username, password=serializer.validated_data['password'])
-    if not user:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    request.user.auth_token.delete()
-    request.user.set_password(serializer.validated_data['new_password'])
-    request.user.save()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+class AppHubLogoutView(LogoutView):
+    def delete(self, request):
+        return self.logout(request)
 
 
 class MeUser(APIView):
@@ -184,10 +94,7 @@ class MeUser(APIView):
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if serializer.validated_data.get('email'):
-            instance = serializer.save(email_verified=False)
-        else:
-            instance = serializer.save()
+        instance = serializer.save()
         response_serializer = UserSerializer(instance)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
@@ -203,10 +110,11 @@ class UserAvatar(APIView):
         instance = serializer.save()
         # todo response no content
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        response['Location'] = build_absolute_uri(instance.avatar.url)
+        response["Location"] = build_absolute_uri(instance.avatar.url)
         return response
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def user_info(request, username):
     try:

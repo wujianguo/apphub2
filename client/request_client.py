@@ -1,12 +1,16 @@
 import requests
+
 from client.client import BaseClient
 
 
 class RequestsClient(BaseClient):
-    def __init__(self, base_url='https://appcenter.libms.top/debug/api/'):
+    def __init__(self, base_url="https://appcenter.libms.top/debug/api/"):
         self.base_url = base_url
-        self.token = ''
-        self.username = ''
+        self.token = ""
+        self.username = ""
+
+    def login_or_create(self, username):
+        pass
 
     def set_token(self, token):
         self.token = token
@@ -19,9 +23,7 @@ class RequestsClient(BaseClient):
 
     def headers(self):
         if self.token:
-            return {
-                'Authorization': 'Bearer ' + self.token
-            }
+            return {"Authorization": "Bearer " + self.token}
         return {}
 
     def get_or_head_file(self, path, query=None):
@@ -41,8 +43,6 @@ class RequestsClient(BaseClient):
 
     def upload_post(self, path, data, token=None):
         if token:
-            headers = {
-                'Authorization': 'Token ' + token
-            }
+            headers = {"Authorization": "Token " + token}
             return requests.post(self.build_url(path), files=data, headers=headers)
         return requests.post(self.build_url(path), files=data, headers=self.headers())

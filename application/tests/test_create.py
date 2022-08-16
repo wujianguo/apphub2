@@ -4,11 +4,10 @@ from util.tests import BaseTestCase
 
 
 class UserUniversalAppCreateTest(BaseTestCase):
-
-    def create_and_get_user(self, username='LarryPage', auto_login=True):
+    def create_and_get_user(self, username="LarryPage", auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
-    def create_and_get_namespace(self, api, namespace, visibility='Public'):
+    def create_and_get_namespace(self, api, namespace, visibility="Public"):
         return api.get_user_api(namespace)
 
     def get_app_api(self, api, namespace, app_path):
@@ -19,15 +18,17 @@ class UserUniversalAppCreateTest(BaseTestCase):
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         app = self.chrome_app()
         r = namespace.create_app(app)
-        self.assert_status_201(r)        
-        self.assert_partial_dict_equal(app, r.json(), ['path', 'name', 'visibility', 'description'])
-        path = app['path']
+        self.assert_status_201(r)
+        self.assert_partial_dict_equal(
+            app, r.json(), ["path", "name", "visibility", "description"]
+        )
+        path = app["path"]
 
         r2 = namespace.get_app_api(path).get_app()
         self.assert_status_200(r2)
         self.assertDictEqual(r.json(), r2.json())
 
-        r = larry.get_or_head_file(r2.json()['icon_file'])
+        r = larry.get_or_head_file(r2.json()["icon_file"])
         self.assert_status_200(r)
 
     def test_invalid_path(self):
@@ -39,28 +40,28 @@ class UserUniversalAppCreateTest(BaseTestCase):
         namespace = self.create_and_get_namespace(larry, larry.client.username)
 
         app = self.chrome_app()
-        app['path'] += '*'
+        app["path"] += "*"
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
         max_length = 32
-        app['path'] = 'a' * max_length
+        app["path"] = "a" * max_length
         r = namespace.create_app(app)
         self.assert_status_201(r)
 
-        app['path'] = 'a' * max_length + 'a'
+        app["path"] = "a" * max_length + "a"
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-        app['path'] = ''
+        app["path"] = ""
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-        del app['path']
+        del app["path"]
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-        app['path'] = 'about'
+        app["path"] = "about"
         r = namespace.create_app(app)
         self.assert_status_409(r)
 
@@ -72,11 +73,11 @@ class UserUniversalAppCreateTest(BaseTestCase):
         namespace.create_app(app)
 
         app2 = self.todo_app()
-        app2['path'] = app['path']
-        r =  namespace.create_app(app2)
+        app2["path"] = app["path"]
+        r = namespace.create_app(app2)
         self.assert_status_409(r)
 
-        bill: Api = self.create_and_get_user('BillGates')
+        bill: Api = self.create_and_get_user("BillGates")
         bill_namespace = self.create_and_get_namespace(bill, bill.client.username)
         r = bill_namespace.create_app(app2)
         self.assert_status_201(r)
@@ -85,7 +86,7 @@ class UserUniversalAppCreateTest(BaseTestCase):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
 
-        params = ['path', 'name', 'visibility', 'install_slug', 'enable_os']
+        params = ["path", "name", "visibility", "install_slug", "enable_os"]
         for param in params:
             app = self.chrome_app()
             del app[param]
@@ -94,30 +95,22 @@ class UserUniversalAppCreateTest(BaseTestCase):
 
     def test_enable_os(self):
         case_list = [
+            {"enable_os": [], "status": 400},
+            {"enable_os": "iOS", "status": 400},
+            {"enable_os": ["xyz"], "status": 400},
+            {"enable_os": ["iOS", "xyz"], "status": 400},
             {
-                "enable_os": [],
-                "status": 400
-            }, {
-                "enable_os": "iOS",
-                "status": 400
-            }, {
-                "enable_os": ["xyz"],
-                "status": 400
-            }, {
-                "enable_os": ["iOS", "xyz"],
-                "status": 400
-            }, {
                 "enable_os": ["iOS", "Android", "macOS", "Windows", "Linux", "tvOS"],
-                "status": 201
-            }
+                "status": 201,
+            },
         ]
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         for case in case_list:
             app = self.chrome_app()
-            app['enable_os'] = case['enable_os']
+            app["enable_os"] = case["enable_os"]
             r = namespace.create_app(app)
-            self.assert_status(r, case['status'])
+            self.assert_status(r, case["status"])
 
     def test_invalid_name(self):
         # 0 < len(name) <= 128
@@ -127,15 +120,15 @@ class UserUniversalAppCreateTest(BaseTestCase):
         app = self.chrome_app()
 
         max_length = 128
-        app['name'] = 'a' * max_length
+        app["name"] = "a" * max_length
         r = namespace.create_app(app)
         self.assert_status_201(r)
 
-        app['name'] = 'a' * max_length + 'a'
+        app["name"] = "a" * max_length + "a"
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-        app['name'] = ''
+        app["name"] = ""
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
@@ -144,16 +137,16 @@ class UserUniversalAppCreateTest(BaseTestCase):
         namespace = self.create_and_get_namespace(larry, larry.client.username)
         app = self.chrome_app()
 
-        app['visibility'] = 'a'
+        app["visibility"] = "a"
         r = namespace.create_app(app)
         self.assert_status_400(r)
 
-        allow_visibility = ['Private', 'Internal', 'Public']
+        allow_visibility = ["Private", "Internal", "Public"]
         for visibility in allow_visibility:
             app = self.chrome_app()
-            app['path'] += visibility
-            app['visibility'] = visibility
-            app['install_slug'] += visibility
+            app["path"] += visibility
+            app["visibility"] = visibility
+            app["install_slug"] += visibility
             r = namespace.create_app(app)
             self.assert_status_201(r)
 
@@ -164,7 +157,7 @@ class UserUniversalAppCreateTest(BaseTestCase):
         r = namespace.create_app(app)
         self.assert_status_201(r)
 
-        app_api = namespace.get_app_api(app['path'])
+        app_api = namespace.get_app_api(app["path"])
 
         r = app_api.remove_app()
         self.assert_status_204(r)
@@ -173,20 +166,18 @@ class UserUniversalAppCreateTest(BaseTestCase):
         self.assert_status_404(r)
 
 
-
 class UserUniversalAppCreate2Test(BaseTestCase):
-
-    def create_and_get_user(self, username='LarryPage', auto_login=True):
+    def create_and_get_user(self, username="LarryPage", auto_login=True):
         return Api(UnitTestClient(), username, auto_login)
 
-    def create_and_get_namespace(self, api, namespace, visibility='Public'):
+    def create_and_get_namespace(self, api, namespace, visibility="Public"):
         return api.get_user_api(namespace)
 
-    def create_and_get_org_namespace(self, api, namespace, visibility='Public'):
+    def create_and_get_org_namespace(self, api, namespace, visibility="Public"):
         org = self.generate_org(1, visibility=visibility)
-        org['path'] = namespace
+        org["path"] = namespace
         api.get_user_api().create_org(org)
-        return api.get_org_api(org['path'])
+        return api.get_org_api(org["path"])
 
     def get_app_api(self, api, namespace, app_path):
         return api.get_user_api(namespace).get_app_api(app_path)
@@ -199,16 +190,16 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         namespace.create_app(app)
 
         app2 = self.todo_app()
-        app2['install_slug'] = app['install_slug']
-        r =  namespace.create_app(app2)
+        app2["install_slug"] = app["install_slug"]
+        r = namespace.create_app(app2)
         self.assert_status_409(r)
 
-        bill: Api = self.create_and_get_user('BillGates')
+        bill: Api = self.create_and_get_user("BillGates")
         bill_namespace = self.create_and_get_namespace(bill, bill.client.username)
         r = bill_namespace.create_app(app2)
         self.assert_status_409(r)
 
-        org_namespace = self.create_and_get_org_namespace(bill, 'microsoft')
+        org_namespace = self.create_and_get_org_namespace(bill, "microsoft")
         r = org_namespace.create_app(app2)
         self.assert_status_409(r)
 
@@ -216,7 +207,7 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         r = org_namespace.create_app(app3)
         self.assert_status_201(r)
 
-        r =  namespace.create_app(app3)
+        r = namespace.create_app(app3)
         self.assert_status_409(r)
 
     def test_create_app_permission(self):
@@ -231,7 +222,9 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         self.assert_list_length(r, 1)
 
         anonymous: Api = Api(UnitTestClient())
-        anonymous_namespace = self.create_and_get_namespace(anonymous, anonymous.client.username)
+        anonymous_namespace = self.create_and_get_namespace(
+            anonymous, anonymous.client.username
+        )
         app = self.todo_app()
         r = anonymous_namespace.create_app(app)
         self.assert_status_401(r)
@@ -239,25 +232,25 @@ class UserUniversalAppCreate2Test(BaseTestCase):
     def test_remove_public_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
-        app = self.chrome_app(visibility='Public')
+        app = self.chrome_app(visibility="Public")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_403(r)
@@ -267,7 +260,7 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
@@ -275,25 +268,25 @@ class UserUniversalAppCreate2Test(BaseTestCase):
     def test_remove_internal_org_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
-        app = self.chrome_app(visibility='Internal')
+        app = self.chrome_app(visibility="Internal")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_403(r)
@@ -303,33 +296,35 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
 
     def test_remove_private_org_permission(self):
         larry = self.create_and_get_user()
-        namespace = self.create_and_get_namespace(larry, larry.client.username, visibility='Private')
-        app = self.chrome_app(visibility='Private')
+        namespace = self.create_and_get_namespace(
+            larry, larry.client.username, visibility="Private"
+        )
+        app = self.chrome_app(visibility="Private")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_404(r)
@@ -339,19 +334,18 @@ class UserUniversalAppCreate2Test(BaseTestCase):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
 
 
 class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
-
-    def create_and_get_namespace(self, api, namespace, visibility='Public'):
+    def create_and_get_namespace(self, api, namespace, visibility="Public"):
         org = self.generate_org(1, visibility=visibility)
-        org['path'] = namespace
+        org["path"] = namespace
         api.get_user_api().create_org(org)
-        return api.get_org_api(org['path'])
+        return api.get_org_api(org["path"])
 
     def get_app_api(self, api, namespace, app_path):
         return api.get_org_api(namespace).get_app_api(app_path)
@@ -365,7 +359,7 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
         self.assert_status_201(r)
 
         anonymous: Api = Api(UnitTestClient())
-        anonymous_namespace = anonymous.get_org_api('LarryPage')
+        anonymous_namespace = anonymous.get_org_api("LarryPage")
         app = self.todo_app()
         r = anonymous_namespace.create_app(app)
         self.assert_status_401(r)
@@ -373,25 +367,25 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
     def test_remove_public_app_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
-        app = self.chrome_app(visibility='Public')
+        app = self.chrome_app(visibility="Public")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_403(r)
@@ -401,7 +395,7 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
@@ -409,25 +403,25 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
     def test_remove_internal_org_permission(self):
         larry = self.create_and_get_user()
         namespace = self.create_and_get_namespace(larry, larry.client.username)
-        app = self.chrome_app(visibility='Internal')
+        app = self.chrome_app(visibility="Internal")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_403(r)
@@ -437,33 +431,35 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
 
     def test_remove_private_org_permission(self):
         larry = self.create_and_get_user()
-        namespace = self.create_and_get_namespace(larry, larry.client.username, visibility='Private')
-        app = self.chrome_app(visibility='Private')
+        namespace = self.create_and_get_namespace(
+            larry, larry.client.username, visibility="Private"
+        )
+        app = self.chrome_app(visibility="Private")
         r = namespace.create_app(app)
         self.assert_status_201(r)
-        path = app['path']
+        path = app["path"]
 
-        bill: Api = Api(UnitTestClient(), 'BillGates', True)
+        bill: Api = Api(UnitTestClient(), "BillGates", True)
         app_api = self.get_app_api(larry, larry.client.username, path)
-        r = app_api.add_member('BillGates', 'Developer')
+        r = app_api.add_member("BillGates", "Developer")
         self.assert_status_201(r)
         bill_app_api = self.get_app_api(bill, larry.client.username, path)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        r = app_api.change_member_role('BillGates', 'Tester')
+        r = app_api.change_member_role("BillGates", "Tester")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_403(r)
 
-        mark: Api = Api(UnitTestClient(), 'MarkZuckerberg', True)
+        mark: Api = Api(UnitTestClient(), "MarkZuckerberg", True)
         mark_app_api = self.get_app_api(mark, larry.client.username, path)
         r = mark_app_api.remove_app()
         self.assert_status_404(r)
@@ -473,7 +469,7 @@ class OrganizationUniversalAppCreateTest(UserUniversalAppCreateTest):
         r = anonymous_app_api.remove_app()
         self.assert_status_401(r)
 
-        r = app_api.change_member_role('BillGates', 'Manager')
+        r = app_api.change_member_role("BillGates", "Manager")
         self.assert_status_200(r)
         r = bill_app_api.remove_app()
         self.assert_status_204(r)
