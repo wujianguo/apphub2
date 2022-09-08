@@ -24,6 +24,6 @@ jobs:
         wget https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
         tar xzvf aliyun-cli-linux-latest-amd64.tgz
         chmod 755 aliyun
-        ./aliyun configure set --profile akProfile --mode AK --region ${{ secrets.RegionId}} --access-key-id ${{ secrets.AccessKeyId }} --access-key-secret ${{ secrets.AccessKeySecret }}
+        ./aliyun configure set --profile akProfile --mode AK --region ${{ secrets.RegionId }} --access-key-id ${{ secrets.AccessKeyId }} --access-key-secret ${{ secrets.AccessKeySecret }}
         ./aliyun oss cp server-code.zip oss://${{ secrets.BucketName }}/code/api.zip -f
-        ./aliyun fc-open PUT /2021-04-06/services/${ServiceName}/functions/${FunctionName} --header "Content-Type=application/json;" --body "{\\"code\\":{\\"ossBucketName\\":\\"${{ secrets.BucketName }}\\",\\"ossObjectName\\":\\"code/api.zip\\"}}"
+        ./aliyun fc-open PUT /2021-04-06/services/${{ secrets.ServiceName }}/functions/${{ secrets.FunctionName }} --header "Content-Type=application/json;" --body "{\\"code\\":{\\"ossBucketName\\":\\"${{ secrets.BucketName }}\\",\\"ossObjectName\\":\\"code/api.zip\\"}}"
