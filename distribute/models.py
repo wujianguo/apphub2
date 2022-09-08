@@ -3,9 +3,10 @@ import hashlib
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import UniqueConstraint
 
 # from django.conf import settings
-from application.models import Application
+from application.models import Application, UniversalApp
 from distribute.stores.base import StoreType
 from util.choice import ChoiceField
 from util.url import get_file_extension
@@ -74,6 +75,7 @@ class Package(models.Model):
         max_length=32, help_text="The app's name (extracted from the uploaded package)."
     )
     package_file = models.FileField(upload_to=distribute_package_path)
+    symbol_file = models.FileField(upload_to=distribute_package_path, blank=True)
     icon_file = models.FileField(upload_to=distribute_icon_path)
     fingerprint = models.CharField(
         max_length=32, help_text="MD5 checksum of the package binary."
@@ -98,7 +100,7 @@ class Package(models.Model):
         max_length=1024, help_text="The package's description."
     )
     commit_id = models.CharField(max_length=40)
-    channle = models.CharField(max_length=32)
+    channel = models.CharField(max_length=32)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -134,6 +136,19 @@ class Package(models.Model):
     #     return install_slug + '/' + os_name + '/' + self.short_version + '/' + self.name + '.' + get_file_extension(file.name, 'zip') # noqa: E501
 
 
+class FileUploadRecord(models.Model):
+    universal_app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
+    package = models.ForeignKey(
+        Package,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE
+    )
+    data = models.JSONField(default=dict)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+
 class Release(models.Model):
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     package = models.OneToOneField(Package, on_delete=models.CASCADE)
@@ -166,7 +181,23 @@ class StoreApp(models.Model):
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     store = models.IntegerField(choices=StoreType.choices)
     auth_data = models.JSONField(default=dict)
-    current_version = models.CharField(max_length=64)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                "app",
+                "store",
+                name="store_app_unique",
+            ),
+        ]
+
+
+class StoreAppVersionRecord(models.Model):
+    app = models.ForeignKey(Application, on_delete=models.CASCADE)
+    store = models.IntegerField(choices=StoreType.choices)
+    short_version = models.CharField(max_length=64)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 

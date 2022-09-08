@@ -1,3 +1,6 @@
+import os.path
+
+from django.conf import settings
 from django.core.files import File
 from rest_framework import serializers
 
@@ -26,6 +29,7 @@ class UniversalAppSerializer(serializers.ModelSerializer):
     enable_os = serializers.SerializerMethodField()
     namespace = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
+    install_url = serializers.SerializerMethodField()
 
     def get_icon_file(self, obj):
         return obj.icon_file.url
@@ -43,6 +47,9 @@ class UniversalAppSerializer(serializers.ModelSerializer):
         if obj.org:
             return {"path": obj.org.path, "name": obj.org.name, "kind": "Organization"}
 
+    def get_install_url(self, obj):
+        return os.path.join(settings.EXTERNAL_WEB_URL, 'd/' + obj.install_slug)
+
     class Meta:
         model = UniversalApp
         fields = [
@@ -50,6 +57,7 @@ class UniversalAppSerializer(serializers.ModelSerializer):
             "path",
             "name",
             "install_slug",
+            "install_url",
             "description",
             "visibility",
             "enable_os",
@@ -93,28 +101,28 @@ class UniversalAppCreateSerializer(serializers.Serializer):
         linux = None
         tvOS = None
 
-        for os in enable_os:
-            if os == Application.OperatingSystem.iOS:
+        for tos in enable_os:
+            if tos == Application.OperatingSystem.iOS:
                 iOS = Application.objects.create(
                     os=Application.OperatingSystem.iOS, universal_app=instance
                 )
-            if os == Application.OperatingSystem.Android:
+            if tos == Application.OperatingSystem.Android:
                 android = Application.objects.create(
                     os=Application.OperatingSystem.Android, universal_app=instance
                 )
-            if os == Application.OperatingSystem.macOS:
+            if tos == Application.OperatingSystem.macOS:
                 macOS = Application.objects.create(
                     os=Application.OperatingSystem.macOS, universal_app=instance
                 )
-            if os == Application.OperatingSystem.Windows:
+            if tos == Application.OperatingSystem.Windows:
                 windows = Application.objects.create(
                     os=Application.OperatingSystem.Windows, universal_app=instance
                 )
-            if os == Application.OperatingSystem.Linux:
+            if tos == Application.OperatingSystem.Linux:
                 linux = Application.objects.create(
                     os=Application.OperatingSystem.Linux, universal_app=instance
                 )
-            if os == Application.OperatingSystem.tvOS:
+            if tos == Application.OperatingSystem.tvOS:
                 tvOS = Application.objects.create(
                     os=Application.OperatingSystem.tvOS, universal_app=instance
                 )
@@ -187,6 +195,7 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
     enable_os = serializers.SerializerMethodField()
     namespace = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
+    install_url = serializers.SerializerMethodField()
 
     def get_icon_file(self, obj):
         return obj.app.icon_file.url
@@ -208,12 +217,16 @@ class UserUniversalAppSerializer(serializers.ModelSerializer):
                 "kind": "Organization",
             }
 
+    def get_install_url(self, obj):
+        return os.path.join(settings.EXTERNAL_WEB_URL, 'd/' + obj.app.install_slug)
+
     class Meta:
         model = UniversalAppUser
         fields = [
             "namespace",
             "path",
             "install_slug",
+            "install_url",
             "name",
             "icon_file",
             "description",

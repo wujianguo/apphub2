@@ -171,7 +171,7 @@ class UniversalAppUser(models.Model):
 class AppAPIToken(models.Model):
     app = models.ForeignKey(UniversalApp, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
-    token = models.CharField(max_length=16, unique=True)
+    token = models.CharField(max_length=64, unique=True)
     enable_upload_package = models.BooleanField(default=False)
     enable_get_packages = models.BooleanField(default=False)
     enable_get_releases = models.BooleanField(default=False)

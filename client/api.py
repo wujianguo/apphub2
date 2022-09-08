@@ -296,11 +296,61 @@ class Api:
         def remove_webhook(self, webhook_id):
             return self.client.delete(self.base_path + "/webhooks/" + str(webhook_id))
 
-        def create_vivo_store(self, auth_data):
-            return self.client.post(self.base_path + "/stores/vivo", auth_data)
+        def get_stores(self):
+            return self.client.get(self.base_path + "/stores")
 
-        def get_vivo_store(self):
+        def create_appstore(self, appstore_app_id, country_code_alpha2):
+            data = {
+                "appstore_app_id": appstore_app_id,
+                "country_code_alpha2": country_code_alpha2
+            }
+            return self.client.post(self.base_path + "/stores/appstore", data)
+
+        def get_appstore_auth(self):
+            return self.client.get(self.base_path + "/stores/appstore")
+
+        def create_huawei_store(self, store_url, store_link):
+            data = {
+                "store_url": store_url,
+                "store_link": store_link
+            }
+            return self.client.post(self.base_path + "/stores/huawei", data)
+
+        def get_huawei_auth(self):
+            return self.client.get(self.base_path + "/stores/huawei")
+
+        def create_vivo_store(self, vivo_store_app_id):
+            data = {
+                "vivo_store_app_id": vivo_store_app_id
+            }
+            return self.client.post(self.base_path + "/stores/vivo", data)
+
+        def get_vivo_auth(self):
             return self.client.get(self.base_path + "/stores/vivo")
+
+        def create_xiaomi_store(self, xiaomi_store_app_id):
+            data = {
+                "xiaomi_store_app_id": xiaomi_store_app_id
+            }
+            return self.client.post(self.base_path + "/stores/xiaomi", data)
+
+        def get_xiaomi_auth(self):
+            return self.client.get(self.base_path + "/stores/xiaomi")
+
+        def create_yingyongbao_store(self, bundle_identifier):
+            data = {
+                "bundle_identifier": bundle_identifier
+            }
+            return self.client.post(self.base_path + "/stores/yingyongbao", data)
+
+        def get_yingyongbao_auth(self):
+            return self.client.get(self.base_path + "/stores/yingyongbao")
+
+        def update_stores_versions(self):
+            return self.client.post(self.base_path + "/stores/current/versions")
+
+        def get_stores_versions(self):
+            return self.client.get(self.base_path + "/stores/current/versions")
 
         def submit_store(self, release_id, release_notes, store):
             payload = {

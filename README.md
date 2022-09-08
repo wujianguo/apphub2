@@ -7,7 +7,7 @@
 [![Django CI](https://github.com/myapphub/apphub/actions/workflows/django.yml/badge.svg)](https://github.com/myapphub/apphub/actions/workflows/django.yml)
 [![codecov](https://codecov.io/gh/myapphub/apphub/branch/main/graph/badge.svg?token=JbvDW07tsh)](https://codecov.io/gh/myapphub/apphub)
 
-🙋‍♀️ AppHub is a self-hosted service that helps you distribute Android, iOS, macOS, tvOS, Linux, Windows apps, you can release builds to testers and public app stores.
+🙋‍♀️ A self-hosted service that helps you distribute Android, iOS, macOS, tvOS, Linux, Windows apps, you can release builds to testers and public app stores.
 
 ## Features
 
@@ -23,14 +23,16 @@
     - [ ] App Store
     - [ ] Vivo Store
     - [ ] Huawei store
+    - [ ] Xiaomi Store
 - [x] Get the app's version status of the public app stores.
     - [ ] Google Play
     - [x] App Store
     - [x] Vivo Store
-    - [x] Huawei store
+    - [x] Huawei Store
+    - [x] Xiaomi Store
 - [ ] Manage tester's iOS devices.
 - [ ] Integrate(webhook, login) AppHub with other applications.
-    - [ ] Slack
+    - [x] Slack
     - [ ] Microsoft Teams
     - [x] Feishu(Lark)
     - [ ] DingTalk
@@ -38,10 +40,19 @@
     - [ ] Gitlab
     - [ ] Github
 - [ ] Multiple storage options
-    - [ ] Amazon S3
+    - [x] Amazon AWS S3
     - [ ] Azure Blob Storage
+    - [ ] Google Cloud Storage
     - [x] Alibaba Cloud OSS
     - [ ] Tencent COS
+- [ ] Multiple deploy options
+    - [x] Manual
+    - [x] Docker
+    - [ ] Amazon AWS Lambda
+    - [ ] Azure serverless
+    - [ ] Google App Engine
+    - [x] Alibaba Cloud Serverless
+    - [ ] Tencent Serverless
 
 ## Configuration
 
@@ -57,7 +68,7 @@
 git clone https://github.com/myapphub/apphub.git
 cd apphub
 pip install -r requirements.txt
-uwsgi --module=apphub.wsgi:application --socket=localhost:8000
+uwsgi --ini apphub.uwsgi.ini
 ```
 
 ### With dashboard

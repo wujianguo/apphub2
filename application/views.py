@@ -233,7 +233,10 @@ class UserUniversalAppIcon(APIView):
         serializer = UniversalAppIconSerializer(app, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        app.icon_file.delete()
+        try:
+            app.icon_file.delete()
+        except:   # noqa: E722
+            pass
         instance = serializer.save()
         # todo response no content
         response = Response(status=status.HTTP_204_NO_CONTENT)
@@ -394,9 +397,9 @@ class UserUniversalAppTokenDetail(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def get_object(self, token_id):
+    def get_object(self, token_id, app):
         try:
-            return AppAPIToken.objects.get(id=token_id)
+            return AppAPIToken.objects.get(id=token_id, app=app)
         except AppAPIToken.DoesNotExist:
             raise Http404
 
@@ -405,7 +408,7 @@ class UserUniversalAppTokenDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        token = self.get_object(token_id)
+        token = self.get_object(token_id, app)
         serializer = UniversalAppTokenSerializer(token)
         return Response(serializer.data)
 
@@ -413,7 +416,7 @@ class UserUniversalAppTokenDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        token = self.get_object(token_id)
+        token = self.get_object(token_id, app)
         serializer = UniversalAppTokenSerializer(token, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -424,7 +427,7 @@ class UserUniversalAppTokenDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        token = self.get_object(token_id)
+        token = self.get_object(token_id, app)
         token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -481,9 +484,9 @@ class UserUniversalAppWebhookDetail(APIView):
     def get_namespace(self, path):
         return Namespace.user(path)
 
-    def get_object(self, webhook_id):
+    def get_object(self, webhook_id, app):
         try:
-            return Webhook.objects.get(id=webhook_id)
+            return Webhook.objects.get(id=webhook_id, app=app)
         except Webhook.DoesNotExist:
             raise Http404
 
@@ -492,7 +495,7 @@ class UserUniversalAppWebhookDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        webhook = self.get_object(webhook_id)
+        webhook = self.get_object(webhook_id, app)
         serializer = WebhookSerializer(webhook)
         return Response(serializer.data)
 
@@ -500,7 +503,7 @@ class UserUniversalAppWebhookDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        webhook = self.get_object(webhook_id)
+        webhook = self.get_object(webhook_id, app)
         serializer = WebhookSerializer(webhook, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -511,7 +514,7 @@ class UserUniversalAppWebhookDetail(APIView):
         app, role = check_app_manager_permission(
             request.user, path, self.get_namespace(namespace)
         )
-        webhook = self.get_object(webhook_id)
+        webhook = self.get_object(webhook_id, app)
         webhook.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

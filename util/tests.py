@@ -23,6 +23,23 @@ class BaseTestCase(TestCase):
         except:  # noqa: E722
             return resp.request
 
+    def assertDictEqual(self, d1, d2, msg=None):
+        keys = ["icon_file", "install_url", "package_url", "package_file"]
+        dict11 = {}
+        dict11.update(d1)
+        dict22 = {}
+        dict22.update(d2)
+        for key in keys:
+            try:
+                del dict11[key]
+            except:  # noqa: E722
+                pass
+            try:
+                del dict22[key]
+            except:  # noqa: E722
+                pass
+        return super().assertDictEqual(dict11, dict22, msg)
+
     def assert_status(self, resp, status_code):
         self.assertEqual(resp.status_code, status_code, self.get_message(resp))
 
@@ -62,22 +79,6 @@ class BaseTestCase(TestCase):
         for key in keys:
             dict11[key] = dict1[key]
             dict22[key] = dict2[key]
-        self.assertDictEqual(dict11, dict22)
-
-    def assert_dict_equal_except(self, dict1, dict2, keys):
-        dict11 = {}
-        dict11.update(dict1)
-        dict22 = {}
-        dict22.update(dict2)
-        for key in keys:
-            try:
-                del dict11[key]
-            except:  # noqa: E722
-                pass
-            try:
-                del dict22[key]
-            except:  # noqa: E722
-                pass
         self.assertDictEqual(dict11, dict22)
 
     def assert_partial_dict_equal2(self, dict1, dict2, keys):

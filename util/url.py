@@ -1,8 +1,14 @@
+import os
+
 from django.conf import settings
 
 
 def build_static_uri(path):
-    return settings.STATIC_URL + path
+    return os.path.join(settings.STATIC_URL, path)
+
+
+def build_web_uri(path):
+    return os.path.join(settings.EXTERNAL_WEB_URL, path)
 
 
 def build_absolute_uri(path):

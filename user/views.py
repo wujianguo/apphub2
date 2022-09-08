@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from user.serializers import (UserAvatarSerializer, UserSerializer,
                               UserUpdateSerializer)
 from util.image import generate_icon_image
-from util.url import build_absolute_uri, build_static_uri
+from util.url import build_absolute_uri, build_web_uri
 
 UserModel = get_user_model()
 
@@ -60,7 +60,7 @@ def auth_config(request):
                 {
                     "type": item,
                     "name": app.get("display_name", item),
-                    "logo": build_static_uri("integrations/" + item + ".png"),
+                    "logo": build_web_uri("assets/images/integrations/" + item + ".png"),  # noqa: E501
                     "auth_url": settings.EXTERNAL_API_URL + "/user/" + item + "/login",
                 }
             )

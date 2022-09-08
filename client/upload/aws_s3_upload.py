@@ -28,12 +28,13 @@ def main():
 
     r = requests.post(url, data=payload, headers=headers)
     print(r.json())
-    upload_url = r.json()['upload_url']
+    response = r.json()
     record_id = r.json()['record_id']
     with open(file, 'rb') as f:
-        r = requests.put(upload_url, data=f)
+        files = {'file': (file, f)}
+        r = requests.post(response['url'], data=response['fields'], files=files)
         print(r.status_code)
-        print(r.text)
+        # print(r.text)
         # print(r.json())
 
     url = os.path.join(api_url, 'upload/record/' + str(record_id))

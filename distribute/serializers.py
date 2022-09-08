@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import serializers
 
 from application.models import Application
-from distribute.models import Package, Release, StoreApp
+from distribute.models import Package, Release, StoreApp, StoreAppVersionRecord
 from distribute.stores.base import StoreType
 from distribute.stores.store import get_store
 from util.choice import ChoiceField
@@ -21,6 +21,7 @@ class PackageSerializer(serializers.ModelSerializer):
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
     uploader = serializers.SerializerMethodField()
+    short_commit_id = serializers.SerializerMethodField()
 
     def get_os(self, obj):
         return ChoiceField(
@@ -69,6 +70,9 @@ class PackageSerializer(serializers.ModelSerializer):
             "username": obj.operator_content_object.username,
         }
 
+    def get_short_commit_id(self, obj):
+        return obj.commit_id[:8]
+
     class Meta:
         model = Package
         fields = [
@@ -84,9 +88,10 @@ class PackageSerializer(serializers.ModelSerializer):
             "size",
             "bundle_identifier",
             "commit_id",
+            "short_commit_id",
             "min_os",
             "os",
-            "channle",
+            "channel",
             "build_type",
             "description",
             "update_time",
@@ -104,9 +109,10 @@ class PackageSerializer(serializers.ModelSerializer):
             "package_id",
             "size",
             "bundle_identifier",
+            "short_commit_id",
             "min_os",
             "os",
-            "channle",
+            "channel",
             "build_type",
         ]
 
@@ -114,40 +120,40 @@ class PackageSerializer(serializers.ModelSerializer):
 class PackageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Package
-        fields = ["description", "commit_id"]
+        fields = ["description", "commit_id", "channel", "build_type"]
 
 
 class UploadPackageSerializer(serializers.Serializer):
     file = serializers.FileField()
     description = serializers.CharField(default="", allow_blank=True)
     commit_id = serializers.CharField(max_length=40, default="", allow_blank=True)
-    channle = serializers.CharField(max_length=32, default="", allow_blank=True)
+    channel = serializers.CharField(max_length=32, default="", allow_blank=True)
     build_type = serializers.CharField(max_length=32, default="Debug")
 
     class Meta:
-        fields = ["file", "description", "commit_id", "channle", "build_type"]
+        fields = ["file", "description", "commit_id", "channel", "build_type"]
 
 
 class RequestUploadPackageSerializer(serializers.Serializer):
-    file_name = serializers.CharField(default="")
+    filename = serializers.CharField(default="")
     description = serializers.CharField(default="", allow_blank=True)
-    commit_id = serializers.CharField(max_length=16, default="", allow_blank=True)
-    channle = serializers.CharField(max_length=32, default="", allow_blank=True)
+    commit_id = serializers.CharField(max_length=40, default="", allow_blank=True)
+    channel = serializers.CharField(max_length=32, default="", allow_blank=True)
     build_type = serializers.CharField(max_length=32, default="Debug")
 
     class Meta:
-        fields = ["file_name", "description", "commit_id", "channle", "build_type"]
+        fields = ["filename", "description", "commit_id", "channel", "build_type"]
 
 
 class UploadAliyunOssPackageSerializer(serializers.Serializer):
     object = serializers.CharField()
     description = serializers.CharField(default="", allow_blank=True)
-    commit_id = serializers.CharField(max_length=16, default="", allow_blank=True)
-    channle = serializers.CharField(max_length=32, default="", allow_blank=True)
+    commit_id = serializers.CharField(max_length=40, default="", allow_blank=True)
+    channel = serializers.CharField(max_length=32, default="", allow_blank=True)
     build_type = serializers.CharField(max_length=32, default="Debug")
 
     class Meta:
-        fields = ["object", "description", "commit_id", "channle", "build_type"]
+        fields = ["object", "description", "commit_id", "channel", "build_type"]
 
 
 class ReleaseSerializer(serializers.ModelSerializer):
@@ -161,7 +167,7 @@ class ReleaseSerializer(serializers.ModelSerializer):
     bundle_identifier = serializers.ReadOnlyField(source="package.bundle_identifier")
     commit_id = serializers.ReadOnlyField(source="package.commit_id")
     min_os = serializers.ReadOnlyField(source="package.min_os")
-    channle = serializers.ReadOnlyField(source="package.channle")
+    channel = serializers.ReadOnlyField(source="package.channel")
 
     package_file = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
@@ -197,7 +203,7 @@ class ReleaseSerializer(serializers.ModelSerializer):
             "bundle_identifier",
             "commit_id",
             "min_os",
-            "channle",
+            "channel",
             "update_time",
             "create_time",
         ]
@@ -215,7 +221,7 @@ class ReleaseSerializer(serializers.ModelSerializer):
             "bundle_identifier",
             "commit_id",
             "min_os",
-            "channle",
+            "channel",
         ]
 
 
@@ -360,11 +366,11 @@ class ReleaseCreateSerializer(serializers.Serializer):
 
 
 class StoreAppSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    store = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
     icon_file = serializers.SerializerMethodField()
 
-    def get_name(self, obj):
+    def get_store(self, obj):
         return get_store(obj.store).name()
 
     def get_display_name(self, obj):
@@ -375,27 +381,23 @@ class StoreAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StoreApp
-        fields = ["name", "display_name", "icon_file", "auth_data", "current_version"]
+        fields = ["store", "display_name", "icon_file", "auth_data"]
 
 
-class StoreAppVivoAuthSerializer(serializers.Serializer):
-    access_key = serializers.CharField()
-    access_secret = serializers.CharField()
-    vivo_store_app_id = serializers.CharField()
-    store_app_link = serializers.URLField()
+class StoreAppAppStoreAuthSerializer(serializers.Serializer):
+    appstore_app_id = serializers.CharField(default="", allow_blank=True)
+    country_code_alpha2 = serializers.CharField(default="", allow_blank=True)
 
     class Meta:
-        fields = ["access_key", "access_secret", "vivo_store_app_id", "store_app_link"]
+        fields = ["appstore_app_id", "country_code_alpha2"]
 
     def create(self, validated_data):
         universal_app = validated_data["universal_app"]
-        app = universal_app.android
-        store = StoreType.Vivo
+        app = universal_app.iOS
+        store = StoreType.AppStore
         auth_data = {
-            "access_key": validated_data["access_key"],
-            "access_secret": validated_data["access_secret"],
-            "vivo_store_app_id": validated_data["vivo_store_app_id"],
-            "store_app_link": validated_data["store_app_link"],
+            "appstore_app_id": validated_data["appstore_app_id"],
+            "country_code_alpha2": validated_data["country_code_alpha2"],
         }
 
         instance = StoreApp.objects.create(
@@ -406,10 +408,132 @@ class StoreAppVivoAuthSerializer(serializers.Serializer):
         return instance
 
 
+class StoreAppVivoAuthSerializer(serializers.Serializer):
+    access_key = serializers.CharField(default="", allow_blank=True)
+    access_secret = serializers.CharField(default="", allow_blank=True)
+    vivo_store_app_id = serializers.CharField(default="", allow_blank=True)
+    store_link = serializers.URLField(default="", allow_blank=True)
+
+    class Meta:
+        fields = ["access_key", "access_secret", "vivo_store_app_id", "store_link"]
+
+    def create(self, validated_data):
+        universal_app = validated_data["universal_app"]
+        app = universal_app.android
+        store = StoreType.Vivo
+        auth_data = {
+            "access_key": validated_data["access_key"],
+            "access_secret": validated_data["access_secret"],
+            "vivo_store_app_id": validated_data["vivo_store_app_id"],
+            "store_link": validated_data["store_link"],
+        }
+
+        instance = StoreApp.objects.create(
+            app=app,
+            store=store,
+            auth_data=auth_data,
+        )
+        return instance
+
+
+class StoreAppHuaweiStoreAuthSerializer(serializers.Serializer):
+    store_url = serializers.URLField(default="", allow_blank=True)
+    store_link = serializers.URLField(default="", allow_blank=True)
+
+    class Meta:
+        fields = ["store_url", "store_link"]
+
+    def create(self, validated_data):
+        universal_app = validated_data["universal_app"]
+        app = universal_app.android
+        store = StoreType.Huawei
+        auth_data = {
+            "store_url": validated_data["store_url"],
+            "store_link": validated_data["store_link"]
+        }
+
+        instance = StoreApp.objects.create(
+            app=app,
+            store=store,
+            auth_data=auth_data,
+        )
+        return instance
+
+
+class StoreAppXiaomiStoreAuthSerializer(serializers.Serializer):
+    xiaomi_store_app_id = serializers.CharField(default="", allow_blank=True)
+
+    class Meta:
+        fields = ["xiaomi_store_app_id"]
+
+    def create(self, validated_data):
+        universal_app = validated_data["universal_app"]
+        app = universal_app.android
+        store = StoreType.Xiaomi
+        auth_data = {
+            "xiaomi_store_app_id": validated_data["xiaomi_store_app_id"],
+        }
+
+        instance = StoreApp.objects.create(
+            app=app,
+            store=store,
+            auth_data=auth_data,
+        )
+        return instance
+
+
+class StoreAppYingyongbaoStoreAuthSerializer(serializers.Serializer):
+    bundle_identifier = serializers.CharField(default="", allow_blank=True)
+
+    class Meta:
+        fields = ["bundle_identifier"]
+
+    def create(self, validated_data):
+        universal_app = validated_data["universal_app"]
+        app = universal_app.android
+        store = StoreType.Yingyongbao
+        auth_data = {
+            "bundle_identifier": validated_data["bundle_identifier"],
+        }
+
+        instance = StoreApp.objects.create(
+            app=app,
+            store=store,
+            auth_data=auth_data,
+        )
+        return instance
+
+
+class StoreAppVersionSerializer(serializers.ModelSerializer):
+
+    store = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
+    icon_file = serializers.SerializerMethodField()
+
+    def get_store(self, obj):
+        return get_store(obj.store).name()
+
+    def get_display_name(self, obj):
+        return get_store(obj.store).display_name()
+
+    def get_icon_file(self, obj):
+        return get_store(obj.store).icon()
+
+    class Meta:
+        model = StoreAppVersionRecord
+        fields = [
+            "store",
+            "display_name",
+            "icon_file",
+            "short_version",
+            "update_time",
+            "create_time"
+        ]
+
 # class ReleaseStoreSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = ReleaseStore
-#         fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channle', 'release_store_id', 'release_notes', 'store', 'state', 'operator', 'update_time', 'create_time'] # noqa: E501
+#         fields = ['name', 'package_file', 'icon_file', 'fingerprint', 'version', 'short_version', 'package_id', 'size', 'bundle_identifier', 'commit_id', 'min_os', 'channel', 'release_store_id', 'release_notes', 'store', 'state', 'operator', 'update_time', 'create_time'] # noqa: E501
 
 # class ReleaseStoreCreateSerializer(serializers.Serializer):
 #     release_id = serializers.IntegerField()

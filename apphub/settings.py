@@ -124,7 +124,7 @@ WSGI_APPLICATION = "apphub.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES_ENGINE = get_env_value(
-    "DEFAULT_SDATABASES_ENGINE", default="django.db.backends.sqlite3"
+    "DATABASES_ENGINE", default="django.db.backends.sqlite3"
 )
 DATABASES = {
     "default": {
@@ -172,11 +172,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DEFAULT_RENDERER_CLASSES = ("rest_framework.renderers.JSONRenderer",)
 
-if DEBUG:
-    DEFAULT_RENDERER_CLASSES = DEFAULT_RENDERER_CLASSES + (
-        "rest_framework.renderers.BrowsableAPIRenderer",
-    )
-
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -205,29 +200,6 @@ USE_TZ = True
 
 FONT_FILE = get_env_value("FONT_FILE", "PingFang.ttc")
 
-STATICFILES_STORAGE = get_env_value(
-    "STATICFILES_STORAGE", "django.contrib.staticfiles.storage.StaticFilesStorage"
-)
-# DEFAULT_FILE_STORAGE = get_env_value('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage') # noqa: E501
-DEFAULT_FILE_STORAGE = get_env_value(
-    "DEFAULT_FILE_STORAGE", "storage.NginxFileStorage.NginxPrivateFileStorage"
-)
-
-
-if (
-    STATICFILES_STORAGE == "storage.AliyunOssStorage.AliyunOssStaticStorage"
-    or DEFAULT_FILE_STORAGE == "storage.AliyunOssStorage.AliyunOssMediaStorage"
-):
-    ALIYUN_OSS_ACCESS_KEY_ID = get_env_value("ALIYUN_OSS_ACCESS_KEY_ID")
-    ALIYUN_OSS_ACCESS_KEY_SECRET = get_env_value("ALIYUN_OSS_ACCESS_KEY_SECRET")
-    ALIYUN_OSS_BUCKET_NAME = get_env_value("ALIYUN_OSS_BUCKET_NAME")
-    ALIYUN_OSS_ENDPOINT = get_env_value("ALIYUN_OSS_ENDPOINT")
-    ALIYUN_OSS_PUBLIC_URL = get_env_value("ALIYUN_OSS_PUBLIC_URL", ALIYUN_OSS_ENDPOINT)
-    ALIYUN_OSS_KEY_PREFIX = get_env_value("ALIYUN_OSS_KEY_PREFIX", "")
-    ALIYUN_OSS_ROLE_ARN = get_env_value("ALIYUN_OSS_ROLE_ARN")
-    ALIYUN_OSS_REGION_ID = get_env_value("ALIYUN_OSS_REGION_ID")
-
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 STATIC_ROOT = get_env_value("STATIC_ROOT", default="var/static/")
@@ -235,6 +207,40 @@ STATIC_URL = get_env_value("STATIC_URL", default=EXTERNAL_WEB_URL + "/static/")
 
 MEDIA_ROOT = get_env_value("MEDIA_ROOT", default="var/media/")
 MEDIA_URL = get_env_value("MEDIA_URL", default=EXTERNAL_WEB_URL + "/media/")
+
+STATICFILES_STORAGE = get_env_value(
+    "STATICFILES_STORAGE", "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
+# DEFAULT_FILE_STORAGE = get_env_value('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage') # noqa: E501
+
+STORAGE_TYPE = get_env_value('STORAGE_TYPE', 'LocalFileSystem')
+STORAGE_MAP = {
+    "LocalFileSystem": "storage.NginxFileStorage.NginxPrivateFileStorage",
+    "AlibabaCloudOSS": "storage.AliyunOssStorage.AliyunOssMediaStorage",
+    "AmazonAWSS3": "storage.AWSS3Storage.AWSS3MediaStorage"
+}
+
+DEFAULT_FILE_STORAGE = STORAGE_MAP.get(STORAGE_TYPE, "storage.NginxFileStorage.NginxPrivateFileStorage")  # noqa: E501
+
+
+if DEFAULT_FILE_STORAGE == "storage.AliyunOssStorage.AliyunOssMediaStorage":
+    ALIYUN_OSS_ACCESS_KEY_ID = get_env_value("ALIYUN_OSS_ACCESS_KEY_ID")
+    ALIYUN_OSS_ACCESS_KEY_SECRET = get_env_value("ALIYUN_OSS_ACCESS_KEY_SECRET")
+    ALIYUN_OSS_BUCKET_NAME = get_env_value("ALIYUN_OSS_BUCKET_NAME")
+    ALIYUN_OSS_ENDPOINT = get_env_value("ALIYUN_OSS_ENDPOINT")
+    ALIYUN_OSS_KEY_PREFIX = get_env_value("ALIYUN_OSS_KEY_PREFIX", "")
+    ALIYUN_OSS_ROLE_ARN = get_env_value("ALIYUN_OSS_ROLE_ARN")
+    ALIYUN_OSS_REGION_ID = get_env_value("ALIYUN_OSS_REGION_ID")
+    ALIYUN_OSS_PUBLIC_READ = get_env_value("ALIYUN_OSS_PUBLIC_READ", False)
+elif DEFAULT_FILE_STORAGE == "storage.AWSS3Storage.AWSS3MediaStorage":
+    AWS_ACCESS_KEY_ID = get_env_value("AWS_STORAGE_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = get_env_value("AWS_STORAGE_SECRET_ACCESS_KEY")
+    AWS_S3_REGION_NAME = get_env_value("AWS_STORAGE_REGION_NAME")
+    AWS_STORAGE_BUCKET_NAME = get_env_value("AWS_STORAGE_BUCKET_NAME")
+    AWS_STORAGE_PUBLIC_READ = get_env_value("AWS_STORAGE_PUBLIC_READ", False)
+    if AWS_STORAGE_PUBLIC_READ:
+        AWS_DEFAULT_ACL = "public-read"
+    AWS_LOCATION = MEDIA_ROOT
 
 
 # Default primary key field type

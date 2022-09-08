@@ -31,6 +31,9 @@ urlpatterns = [
     path("user/orgs", AuthenticatedUserOrganizationList.as_view()),
     path("user/", include("user.urls")),
     path("users/<username>", user_info),
+    path("upload/file", TokenAppPackageUpload.as_view()),
+    path("upload/request", RequestUploadPackage.as_view()),
+    path("upload/record/<record_id>", CheckUploadPackage.as_view()),
     path("download/<slug>", SlugAppDetail.as_view()),
     path("download/<slug>/packages", SlugAppPackageList.as_view()),
     path("download/<slug>/packages/latest", SlugAppPackageLatest.as_view()),
@@ -99,7 +102,25 @@ urlpatterns = [
         OrganizationAppReleaseDetail.as_view(),
     ),
     path(
+        "orgs/<namespace>/apps/<path>/stores", OrganizationStoreAppList.as_view()
+    ),
+    path(
         "orgs/<namespace>/apps/<path>/stores/vivo", OrganizationStoreAppVivo.as_view()
+    ),
+    path(
+        "orgs/<namespace>/apps/<path>/stores/appstore", OrganizationStoreAppAppstore.as_view()
+    ),
+    path(
+        "orgs/<namespace>/apps/<path>/stores/huawei", OrganizationStoreAppHuawei.as_view()
+    ),
+    path(
+        "orgs/<namespace>/apps/<path>/stores/xiaomi", OrganizationStoreAppXiaomi.as_view()
+    ),
+    path(
+        "orgs/<namespace>/apps/<path>/stores/yingyongbao", OrganizationStoreAppYingyongbao.as_view()
+    ),
+    path(
+        "orgs/<namespace>/apps/<path>/stores/current/versions", OrganizationStoreAppCurrentVersion.as_view()
     ),
     path("orgs/", include("organization.urls")),
     path("apps", VisibleUniversalAppList.as_view()),
@@ -150,8 +171,13 @@ urlpatterns = [
         "users/<namespace>/apps/<path>/releases/<int:release_id>",
         UserAppReleaseDetail.as_view(),
     ),
+    path("users/<namespace>/apps/<path>/stores", UserStoreAppList.as_view()),
     path("users/<namespace>/apps/<path>/stores/vivo", UserStoreAppVivo.as_view()),
-    path("upload/file", TokenAppPackageUpload.as_view()),
+    path("users/<namespace>/apps/<path>/stores/appstore", UserStoreAppAppstore.as_view()),
+    path("users/<namespace>/apps/<path>/stores/huawei", UserStoreAppHuawei.as_view()),
+    path("users/<namespace>/apps/<path>/stores/xiaomi", UserStoreAppXiaomi.as_view()),
+    path("users/<namespace>/apps/<path>/stores/yingyongbao", UserStoreAppYingyongbao.as_view()),
+    path("users/<namespace>/apps/<path>/stores/current/versions", UserStoreAppCurrentVersion.as_view()),
     path("docs/swagger.json", SwaggerJsonView.as_view()),
     path("system/", include("system.urls")),
 ]
@@ -242,21 +268,6 @@ if settings.DEFAULT_FILE_STORAGE == "storage.NginxFileStorage.NginxPrivateFileSt
 
     urlpatterns.append(
         re_path(r"^file/(?P<file>([^/]+/).*)$", nginx_media, name="file")
-    )
-elif settings.DEFAULT_FILE_STORAGE == "storage.AliyunOssStorage.AliyunOssMediaStorage":
-    urlpatterns.append(
-        path(
-            "aliyun/oss/callback/<uploader_type>/<uploader_name>/<slug>",
-            AliyunOssUploadPackageCallback.as_view(),
-            name="aliyun-oss-callback",
-        )
-    )
-    urlpatterns.append(
-        path(
-            "aliyun/oss/request_upload/<slug>",
-            AliyunOssRequestUploadPackage.as_view(),
-            name="aliyun-oss-request-upload",
-        )
     )
 
 

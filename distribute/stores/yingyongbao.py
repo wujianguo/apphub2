@@ -9,7 +9,7 @@ class YingyongbaoStore(StoreBase):
 
     @staticmethod
     def store_type():
-        return StoreType.Huawei
+        return StoreType.Yingyongbao
 
     @staticmethod
     def name():
